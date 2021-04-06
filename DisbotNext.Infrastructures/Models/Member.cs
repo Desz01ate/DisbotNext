@@ -8,8 +8,13 @@ namespace DisbotNext.Infrastructures.Sqlite.Models
     {
 
         public ulong Id { get; private set; }
+
         public int Level { get; private set; }
+
         public double Exp { get; private set; }
+
+        public List<ChatLog> ChatLogs { get; set; }
+
         public double NextExp => Math.Round(Level + Math.Pow(Level / 2, 1.115) * Math.Sqrt(Level), 0);
 
         public Member(ulong id,

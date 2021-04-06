@@ -22,15 +22,11 @@ namespace DisbotNext
             try
             {
                 await this.client.ConnectAsync();
-                foreach (var channel in this.client.Channels)
-                {
-                    await channel.SendMessageAsync("ดีจ้า");
-                }
                 await Task.Delay(-1);
             }
             catch (Exception ex)
             {
-
+                Console.WriteLine(ex);
                 throw;
             }
         }
