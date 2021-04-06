@@ -13,9 +13,14 @@ namespace DisbotNext.Infrastructures.Sqlite.Models
 
         public double Exp { get; private set; }
 
-        public List<ChatLog> ChatLogs { get; set; }
+        public virtual List<ChatLog> ChatLogs { get; set; }
 
         public double NextExp => Math.Round(Level + Math.Pow(Level / 2, 1.115) * Math.Sqrt(Level), 0);
+
+        public Member()
+        {
+
+        }
 
         public Member(ulong id,
                       int level,

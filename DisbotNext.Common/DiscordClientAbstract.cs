@@ -27,7 +27,8 @@ namespace DisbotNext.Common
             {
                 Token = configuration.DiscordBotToken,
                 TokenType = TokenType.Bot,
-                AutoReconnect = true
+                AutoReconnect = true,
+                Intents = DiscordIntents.All
             });
             Client.GuildDownloadCompleted += DiscordClient_GuildsDownloadCompleted;
             Client.GuildCreated += DiscordClient_GuildCreatedCompleted;

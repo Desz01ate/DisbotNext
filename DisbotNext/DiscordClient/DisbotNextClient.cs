@@ -13,6 +13,7 @@ using Laploy.ThaiSen.ML;
 using System.Threading.Tasks;
 using System.IO;
 using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace DisbotNext.DiscordClient
 {
@@ -27,6 +28,23 @@ namespace DisbotNext.DiscordClient
             this.Client.MessageReactionAdded += Client_MessageReactionAdded;
             this.Client.MessageReactionRemoved += Client_MessageReactionRemoved;
             this.Client.GuildMemberAdded += Client_GuildMemberAdded;
+            this.Client.PresenceUpdated += Client_PresenceUpdated;
+        }
+
+        private async Task Client_PresenceUpdated(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.PresenceUpdateEventArgs e)
+        {
+            var presence = e.PresenceAfter;
+            var guild = presence.Guild;
+            var channels = await guild.GetChannelsAsync();
+            if (!channels.Any(x => x.Name.ToLowerInvariant() == presence?.Activity?.Name?.ToLowerInvariant()))
+            {
+                if (presence.Activity.Name == "Custom Status")
+                    return;
+                var parentCategoryChannel = channels.FirstOrDefault(x => x.Name == presence.Activity.Name && x.Type == DSharpPlus.ChannelType.Category) ?? await guild.CreateChannelAsync(presence.Activity.Name, DSharpPlus.ChannelType.Category);
+                var textChannel = await guild.CreateChannelAsync("text", DSharpPlus.ChannelType.Text, parentCategoryChannel);
+                var voiceChannel = await guild.CreateChannelAsync("voice", DSharpPlus.ChannelType.Voice, parentCategoryChannel);
+                await textChannel.SendMessageAsync($"@everyone สร้าง channel สำหรับ {presence.Activity.Name} เนื่องจาก {e.User.Mention} ได้เล่นอยู่ ถ้าใครสนใจเล่นด้วยกัน มาคุยกันได้ที่นี่เลย!");
+            }
         }
 
         private async Task Client_GuildMemberAdded(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.GuildMemberAddEventArgs e)
@@ -53,7 +71,6 @@ namespace DisbotNext.DiscordClient
             var message = await channel.GetMessageAsync(e.Message.Id);
             if (this.Channels.Contains(channel) && message.Author.Id != this.Client.CurrentUser.Id && message.Author.Id != e.User.Id)
             {
-                var test = await this._dbContext.Members.Include(x => x.ChatLogs).ToListAsync();
                 var user = await this._dbContext.Members.FindAsync(message.Author.Id);
                 user.ExpGained(1);
                 await this._dbContext.SaveChangesAsync();
@@ -81,6 +98,12 @@ namespace DisbotNext.DiscordClient
                     await channel.SendMessageAsync($"🎉🎉🎉 🥂{e.Author.Mention}🥂 ได้อัพเลเวลเป็น {user.Level}! 🎉🎉🎉 ");
                     await channel.SendFileAsync(avatar);
                 }
+                await this._dbContext.ChatLogs.AddAsync(new ChatLog
+                {
+                    Author = user,
+                    Content = e.Message.Content,
+                    CreateAt = DateTime.Now
+                });
                 await this._dbContext.SaveChangesAsync();
 
             }

@@ -8,21 +8,24 @@ namespace DisbotNext.Infrastructures.Sqlite.Models
 {
     public class ChatLog
     {
-        public ulong Id { get; }
+        public ulong Id { get; set; }
 
-        public Member Author { get; }
+        public virtual Member Author { get; set; }
 
-        public string Content { get; }
+        public string Content { get; set; }
 
-        public DateTime CreateAt { get; }
+        public DateTime CreateAt { get; set; }
+
+        public ChatLog()
+        {
+
+        }
 
         public ChatLog(ulong id,
-                       Member author, 
-                       string content, 
+                       string content,
                        DateTime createAt)
         {
             Id = id;
-            Author = author;
             Content = content;
             CreateAt = createAt;
         }

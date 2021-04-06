@@ -3,12 +3,14 @@ using DisbotNext.Infrastructures.Sqlite.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.IO;
+using Microsoft.EntityFrameworkCore.Proxies;
 
 namespace DisbotNext.Infrastructures.Sqlite
 {
     public class SqliteDbContext : DbContext
     {
         private MemberDbSet _members;
+
         public DbSet<Member> Members
         {
             get => _members;
@@ -22,7 +24,7 @@ namespace DisbotNext.Infrastructures.Sqlite
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlite($@"Data Source={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Local.db")}");
+            optionsBuilder.UseLazyLoadingProxies().UseSqlite($@"Data Source={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Local.db")}");
             base.OnConfiguring(optionsBuilder);
         }
 
@@ -31,13 +33,17 @@ namespace DisbotNext.Infrastructures.Sqlite
             modelBuilder.Entity<Member>(builder =>
             {
                 builder.HasKey(x => x.Id);
-                builder.HasMany(x => x.ChatLogs);
+                builder.Property(x => x.Id).ValueGeneratedOnAdd();
+                builder.HasMany(x => x.ChatLogs).WithOne();
             });
 
             modelBuilder.Entity<ChatLog>(builder =>
             {
                 builder.HasKey(x => x.Id);
-                builder.HasOne(x => x.Author);
+                builder.Property(x => x.Id).ValueGeneratedOnAdd();
+                builder.Property(x => x.Content);
+                builder.Property(x => x.CreateAt);
+                builder.HasOne(x => x.Author).WithMany(x => x.ChatLogs);
             });
         }
     }
