@@ -43,9 +43,24 @@ namespace DisbotNext.DiscordClient
                 var parentCategoryChannel = channels.FirstOrDefault(x => x.Name == presence.Activity.Name && x.Type == DSharpPlus.ChannelType.Category) ?? await guild.CreateChannelAsync(presence.Activity.Name, DSharpPlus.ChannelType.Category);
                 var textChannel = await guild.CreateChannelAsync("text", DSharpPlus.ChannelType.Text, parentCategoryChannel);
                 var voiceChannel = await guild.CreateChannelAsync("voice", DSharpPlus.ChannelType.Voice, parentCategoryChannel);
-                await textChannel.SendMessageAsync($"@everyone สร้าง channel สำหรับ {presence.Activity.Name} เนื่องจาก {e.User.Mention} ได้เล่นอยู่ ถ้าใครสนใจเล่นด้วยกัน มาคุยกันได้ที่นี่เลย!");
+                DeleteTemporaryChannelsAsync(parentCategoryChannel, voiceChannel, textChannel);
+
+                async Task DeleteTemporaryChannelsAsync(DiscordChannel parentChannel, DiscordChannel voiceChannel, DiscordChannel textChannel)
+                {
+                    // 1000 ms x 60 seconds x 60 minutes
+                    var interval = 1000 * 60 * 60;
+                    await Task.Delay(interval);
+                    if (voiceChannel.Users.Count() > 0)
+                    {
+                        await DeleteTemporaryChannelsAsync(parentChannel, voiceChannel, textChannel);
+                    }
+                    await voiceChannel.DeleteAsync();
+                    await textChannel.DeleteAsync();
+                    await parentChannel.DeleteAsync();
+                }
             }
         }
+
 
         private async Task Client_GuildMemberAdded(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.GuildMemberAddEventArgs e)
         {
