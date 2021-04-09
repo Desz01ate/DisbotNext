@@ -1,4 +1,4 @@
-﻿using DisbotNext.Infrastructures.Sqlite.Models;
+﻿using DisbotNext.Infrastructures.Common.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata;

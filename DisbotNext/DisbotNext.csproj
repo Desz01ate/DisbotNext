@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DisbotNext.Common\DisbotNext.Common.csproj" />
+    <ProjectReference Include="..\DisbotNext.Infrastructure.Common\DisbotNext.Infrastructure.Common.csproj" />
     <ProjectReference Include="..\DisbotNext.Infrastructures\DisbotNext.Infrastructures.Sqlite.csproj" />
   </ItemGroup>
 

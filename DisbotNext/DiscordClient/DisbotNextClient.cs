@@ -7,24 +7,23 @@ using System.Collections.Immutable;
 using System.Linq;
 using DisbotNext.Common.Extensions;
 using DisbotNext.Infrastructures.Sqlite;
-using DisbotNext.Infrastructures.Sqlite.Models;
 using DisbotNext.Helpers;
 using Laploy.ThaiSen.ML;
 using System.Threading.Tasks;
 using System.IO;
-using Microsoft.EntityFrameworkCore;
 using System;
 using DSharpPlus.CommandsNext;
-using Microsoft.Extensions.DependencyInjection;
+using DisbotNext.Infrastructures.Common.Models;
+using DisbotNext.Infrastructure.Common;
 
 namespace DisbotNext.DiscordClient
 {
     public class DisbotNextClient : DiscordClientAbstract
     {
-        private readonly SqliteDbContext _dbContext;
+        private readonly DisbotDbContext _dbContext;
         public override IReadOnlyList<DiscordChannel> Channels => base.Channels;
-        public DisbotNextClient(IServiceProvider service, 
-                                SqliteDbContext dbContext, 
+        public DisbotNextClient(IServiceProvider service,
+                                DisbotDbContext dbContext, 
                                 DiscordConfigurations configuration) : base(configuration)
         {
             this._dbContext = dbContext;

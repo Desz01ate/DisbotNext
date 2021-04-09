@@ -1,5 +1,6 @@
 ﻿using DisbotNext.Common.Configurations;
 using DisbotNext.DiscordClient;
+using DisbotNext.Infrastructure.Common;
 using DisbotNext.Infrastructures.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -22,7 +23,7 @@ namespace DisbotNext
             var host = new HostBuilder()
                 .ConfigureServices(services =>
                 {
-                    services.AddDbContext<SqliteDbContext>();
+                    services.AddDbContext<DisbotDbContext, SqliteDbContext>();
                     services.AddSingleton<DisbotNextClient>();
                     services.AddTransient(_ => GetConfiguration());
                     services.AddHostedService<Application>();
