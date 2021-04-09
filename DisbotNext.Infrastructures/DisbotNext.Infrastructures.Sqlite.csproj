@@ -13,4 +13,8 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="5.0.4" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\DisbotNext.Infrastructure.Common\DisbotNext.Infrastructure.Common.csproj" />
+  </ItemGroup>
+
 </Project>

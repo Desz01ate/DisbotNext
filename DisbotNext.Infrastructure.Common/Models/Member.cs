@@ -2,11 +2,10 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace DisbotNext.Infrastructures.Sqlite.Models
+namespace DisbotNext.Infrastructures.Common.Models
 {
     public class Member
     {
-
         public ulong Id { get; private set; }
 
         public int Level { get; private set; }

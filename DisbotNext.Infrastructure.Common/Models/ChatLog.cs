@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DisbotNext.Infrastructures.Sqlite.Models
+namespace DisbotNext.Infrastructures.Common.Models
 {
     public class ChatLog
     {

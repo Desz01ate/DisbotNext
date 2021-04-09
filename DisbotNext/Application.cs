@@ -1,4 +1,5 @@
 ﻿using DisbotNext.DiscordClient;
+using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace DisbotNext
 {
-    public class Application
+    public class Application : IHostedService
     {
         private readonly DisbotNextClient client;
 
@@ -17,7 +18,7 @@ namespace DisbotNext
             this.client = client;
         }
 
-        public async Task RunAsync(CancellationToken cancellationToken = default)
+        public async Task StartAsync(CancellationToken cancellationToken)
         {
             try
             {
@@ -29,6 +30,11 @@ namespace DisbotNext
                 Console.WriteLine(ex);
                 throw;
             }
+        }
+
+        public async Task StopAsync(CancellationToken cancellationToken)
+        {
+            await this.client.DisposeAsync();
         }
     }
 }

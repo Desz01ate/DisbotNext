@@ -20,7 +20,7 @@ namespace DisbotNext.Common
 
         public virtual IReadOnlyList<DiscordChannel> Channels => this._channels;
 
-        protected DiscordClientAbstract(DiscordConfigurations configuration, Type commandModuleType)
+        protected DiscordClientAbstract(DiscordConfigurations configuration)
         {
             _channels = new List<DiscordChannel>();
             Client = new DiscordClient(new DiscordConfiguration()
@@ -36,24 +36,11 @@ namespace DisbotNext.Common
             Client.ChannelCreated += DiscordClient_ChannelCreated;
             Client.ChannelUpdated += DiscordClient_ChannelUpdated;
             Client.ChannelDeleted += DiscordClient_ChannelDeleted;
-            var Commands = Client.UseCommandsNext(new CommandsNextConfiguration
-            {
-                StringPrefixes = new[] { configuration.CommandPrefix },
-                EnableDms = true,
-                EnableMentionPrefix = true,
-            });
-            Commands.RegisterCommands(commandModuleType);
-            Commands.CommandErrored += CommandErrorHandler;
         }
 
         public Task ConnectAsync(CancellationToken cancellation = default)
         {
             return this.Client.ConnectAsync();
-        }
-        protected virtual Task CommandErrorHandler(CommandsNextExtension sender, CommandErrorEventArgs e)
-        {
-            Console.WriteLine(e.Exception.Message);
-            return Task.CompletedTask;
         }
 
         protected virtual Task DiscordClient_ChannelDeleted(DiscordClient sender, ChannelDeleteEventArgs e)
@@ -67,6 +54,7 @@ namespace DisbotNext.Common
             }
             return Task.CompletedTask;
         }
+
         protected virtual Task DiscordClient_ChannelUpdated(DiscordClient sender, ChannelUpdateEventArgs e)
         {
             var channel = e.ChannelAfter;

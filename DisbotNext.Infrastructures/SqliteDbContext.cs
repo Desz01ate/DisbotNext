@@ -1,17 +1,18 @@
 ﻿using DisbotNext.Infrastructures.Sqlite.CustomDbSets;
-using DisbotNext.Infrastructures.Sqlite.Models;
+using DisbotNext.Infrastructures.Common.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.IO;
 using Microsoft.EntityFrameworkCore.Proxies;
+using DisbotNext.Infrastructure.Common;
 
 namespace DisbotNext.Infrastructures.Sqlite
 {
-    public class SqliteDbContext : DbContext
+    public class SqliteDbContext : DisbotDbContext
     {
         private MemberDbSet _members;
 
-        public DbSet<Member> Members
+        public override DbSet<Member> Members
         {
             get => _members;
             set
@@ -20,7 +21,7 @@ namespace DisbotNext.Infrastructures.Sqlite
             }
         }
 
-        public DbSet<ChatLog> ChatLogs { get; set; }
+        public override DbSet<ChatLog> ChatLogs { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
