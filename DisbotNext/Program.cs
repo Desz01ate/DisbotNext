@@ -1,5 +1,6 @@
 ﻿using DisbotNext.Common.Configurations;
 using DisbotNext.DiscordClient;
+using DisbotNext.ExternalServices.CovidTracker;
 using DisbotNext.Infrastructure.Common;
 using DisbotNext.Infrastructures.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,8 +24,10 @@ namespace DisbotNext
             var host = new HostBuilder()
                 .ConfigureServices(services =>
                 {
+                    services.AddHttpClient();
                     services.AddDbContext<DisbotDbContext, SqliteDbContext>();
                     services.AddSingleton<DisbotNextClient>();
+                    services.AddTransient<ICovidTracker, CovidTracker>();
                     services.AddTransient(_ => GetConfiguration());
                     services.AddHostedService<Application>();
                 })
