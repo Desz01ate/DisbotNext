@@ -55,5 +55,12 @@ namespace DisbotNext.DiscordClient.Commands
             };
             await ctx.RespondAsync(embed);
         }
+        [Command("Calculator")]
+        public async Task GetNumber(CommandContext ctx, float x, float y)
+        {
+            var z = x + y;
+            await ctx.RespondAsync($"คำตอบคือ! {z}");
+        }
+        
     }
 }
