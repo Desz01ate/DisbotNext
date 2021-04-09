@@ -1,5 +1,7 @@
-﻿using DSharpPlus.CommandsNext;
+﻿using DisbotNext.Infrastructures.Sqlite;
+using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,8 +12,10 @@ namespace DisbotNext.DiscordClient.Commands
 {
     public class CommandsHandler : BaseCommandModule
     {
-        public CommandsHandler()
+        private readonly SqliteDbContext _sqliteDbContext;
+        public CommandsHandler(SqliteDbContext dbContext)
         {
+            this._sqliteDbContext = dbContext;
         }
 
         [Command("Test")]

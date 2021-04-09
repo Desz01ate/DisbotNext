@@ -14,6 +14,8 @@ using System.Threading.Tasks;
 using System.IO;
 using Microsoft.EntityFrameworkCore;
 using System;
+using DSharpPlus.CommandsNext;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace DisbotNext.DiscordClient
 {
@@ -21,7 +23,9 @@ namespace DisbotNext.DiscordClient
     {
         private readonly SqliteDbContext _dbContext;
         public override IReadOnlyList<DiscordChannel> Channels => base.Channels;
-        public DisbotNextClient(SqliteDbContext dbContext, DiscordConfigurations configuration) : base(configuration, typeof(CommandsHandler))
+        public DisbotNextClient(IServiceProvider service, 
+                                SqliteDbContext dbContext, 
+                                DiscordConfigurations configuration) : base(configuration)
         {
             this._dbContext = dbContext;
             this.Client.MessageCreated += Client_MessageCreated;
@@ -29,6 +33,22 @@ namespace DisbotNext.DiscordClient
             this.Client.MessageReactionRemoved += Client_MessageReactionRemoved;
             this.Client.GuildMemberAdded += Client_GuildMemberAdded;
             this.Client.PresenceUpdated += Client_PresenceUpdated;
+
+            var commands = this.Client.UseCommandsNext(new CommandsNextConfiguration
+            {
+                StringPrefixes = new[] { configuration.CommandPrefix },
+                EnableDms = true,
+                EnableMentionPrefix = true,
+                Services = service,
+            });
+            commands.RegisterCommands<CommandsHandler>();
+            commands.CommandErrored += Commands_CommandErrored;
+        }
+
+        private Task Commands_CommandErrored(CommandsNextExtension sender, CommandErrorEventArgs e)
+        {
+            Console.WriteLine(e.Exception);
+            return Task.CompletedTask;
         }
 
         private async Task Client_PresenceUpdated(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.PresenceUpdateEventArgs e)
