@@ -3,6 +3,8 @@ using DisbotNext.DiscordClient;
 using DisbotNext.ExternalServices.CovidTracker;
 using DisbotNext.Infrastructure.Common;
 using DisbotNext.Infrastructures.Sqlite;
+using Hangfire;
+using Hangfire.SQLite;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
@@ -26,6 +28,12 @@ namespace DisbotNext
                 {
                     services.AddHttpClient();
                     services.AddDbContext<DisbotDbContext, SqliteDbContext>();
+                    services.AddHangfire(config =>
+                    {
+                        config.UseColouredConsoleLogProvider();
+                        config.UseSQLiteStorage($"Data Source={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "cron.db")};Mode=ReadWriteCreate;Cache=Private", new SQLiteStorageOptions());
+                    });
+                    services.AddHangfireServer();
                     services.AddSingleton<DisbotNextClient>();
                     services.AddScoped<UnitOfWork>();
                     services.AddTransient<ICovidTracker, CovidTracker>();
