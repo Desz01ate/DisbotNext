@@ -69,7 +69,7 @@ namespace DisbotNext.DiscordClient
                     // 1000 ms x 60 seconds x 60 minutes
                     var interval = 1000 * 60 * 60;
                     await Task.Delay(interval);
-                    if (voiceChannel.Users.Count() > 0)
+                    if (voiceChannel.Users.Any())
                     {
                         await DeleteTemporaryChannelsAsync(parentChannel, voiceChannel, textChannel);
                     }
@@ -83,7 +83,7 @@ namespace DisbotNext.DiscordClient
 
         private async Task Client_GuildMemberAdded(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.GuildMemberAddEventArgs e)
         {
-            var user = this._unitOfWork.MemberRepository.FindOrCreateAsync(e.Member.Id);
+            await this._unitOfWork.MemberRepository.FindOrCreateAsync(e.Member.Id);
             await this._unitOfWork.SaveChangesAsync();
         }
 
@@ -91,7 +91,7 @@ namespace DisbotNext.DiscordClient
         {
             var channel = e.Channel;
             var message = await channel.GetMessageAsync(e.Message.Id);
-            if (this.Channels.Contains(channel) && message.Author.Id != this.Client.CurrentUser.Id && message.Author.Id != e.User.Id)
+            if (this.Channels.Contains(channel) && !message.Author.IsBot && message.Author.Id != e.User.Id)
             {
                 var user = await this._unitOfWork.MemberRepository.FindOrCreateAsync(message.Author.Id);
                 user.ExpGained(-1);
@@ -103,7 +103,7 @@ namespace DisbotNext.DiscordClient
         {
             var channel = e.Channel;
             var message = await channel.GetMessageAsync(e.Message.Id);
-            if (this.Channels.Contains(channel) && message.Author.Id != this.Client.CurrentUser.Id && message.Author.Id != e.User.Id)
+            if (this.Channels.Contains(channel) && !message.Author.IsBot && message.Author.Id != e.User.Id)
             {
                 var user = await this._unitOfWork.MemberRepository.FindOrCreateAsync(message.Author.Id);
                 user.ExpGained(1);
@@ -115,7 +115,7 @@ namespace DisbotNext.DiscordClient
         private async System.Threading.Tasks.Task Client_MessageCreated(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.MessageCreateEventArgs e)
         {
             var channel = e.Channel;
-            if (this.Channels.Contains(channel) && e.Author.Id != this.Client.CurrentUser.Id)
+            if (this.Channels.Contains(channel) && !e.Author.IsBot)
             {
                 (bool isRude, float _) = ThaiSen.Predict(e.Message.Content);
                 if (isRude)

@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
+﻿using SixLabors.Fonts;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Drawing.Processing;
+using SixLabors.ImageSharp.Processing;
+using System;
 using System.IO;
-using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DisbotNext.Helpers
 {
@@ -17,29 +16,48 @@ namespace DisbotNext.Helpers
         }
         public static string GetLevelupAvatar(string url, int level)
         {
-            var temp = Path.GetTempFileName().Replace("tmp", "jpg");
-            using (var webClient = new WebClient())
+            var tempDir = Path.Combine(Directory.GetCurrentDirectory(), "Temp");
+            Directory.CreateDirectory(tempDir);
+            var tempFile = Path.Combine(tempDir, Guid.NewGuid() + ".jpg");
+            Console.WriteLine($"Generating file {tempFile}");
+            using var webClient = new WebClient();
+            var bytes = webClient.DownloadData(url);
+            using var stream = new MemoryStream(bytes);
+            using var avatar = Image.Load(stream);
+            avatar.Mutate(x => x.Resize(128, 128));
+            var fontCollection = new FontCollection();
+            if (!fontCollection.TryFind("Tahoma", out FontFamily? fontFamily))
             {
-                var bytes = webClient.DownloadData(url);
-                using var stream = new MemoryStream(bytes);
-                using var avatar = Resize(Image.FromStream(stream), 128, 128);//Resize(Image.FromFile(tempFile), 256, 256);
-                using (var g = Graphics.FromImage(avatar))
-                {
-                    using var font = new Font(FontFamily.GenericMonospace, 12, FontStyle.Bold);
-                    using var descFont = new Font(FontFamily.GenericMonospace, 8, FontStyle.Regular);
-                    var text = $"Level {level}";
-                    string levelDesc = GetLevelDesc(level);
-                    var measure = g.MeasureString(text, font);
-                    var descMeasure = g.MeasureString(levelDesc, descFont);
-                    var point = new Point((int)((avatar.Width - measure.Width) / 2), (int)(avatar.Height * 0.72));
-                    var descPoint = new Point((int)((avatar.Width - descMeasure.Width) / 2), (int)(avatar.Height * 0.85));
-                    g.FillRectangle(Brushes.Black, new Rectangle(new Point(0, (int)(avatar.Height * 0.7)), new Size(avatar.Width, (int)(avatar.Height * 0.35))));
-                    g.DrawString(text, font, Brushes.Gold, point);
-                    g.DrawString(levelDesc, descFont, Brushes.White, descPoint);
-                }
-                avatar.Save(temp);
-                return temp;
+                fontFamily = fontCollection.Install("./Assets/tahoma.ttf");
             }
+
+            var headline = $"Level {level}";
+            var description = GetLevelDesc(level);
+
+            var font = fontFamily.CreateFont(12);
+            var descFont = fontFamily.CreateFont(10);
+            var scalingFactor = Math.Min(avatar.Width / avatar.Width, avatar.Height / avatar.Height);
+
+            var scaledFont = new Font(font, scalingFactor * font.Size);
+            var scaledDescFont = new Font(descFont, scalingFactor * descFont.Size);
+            var measure = TextMeasurer.Measure(headline, new RendererOptions(scaledFont));
+            var descMeasure = TextMeasurer.Measure(description, new RendererOptions(scaledDescFont));
+            var textGraphicOptions = new TextGraphicsOptions()
+            {
+                TextOptions = {
+                        HorizontalAlignment = HorizontalAlignment.Left,
+                        VerticalAlignment = VerticalAlignment.Top
+                    },
+            };
+
+            var position = new PointF((int)((avatar.Width - measure.Width) / 2), (int)(avatar.Height * 0.75));
+            var descPosition = new PointF((int)((avatar.Width - descMeasure.Width) / 2), (int)(avatar.Height * 0.88));
+            var backgroundRect = new RectangleF(0, avatar.Height * 0.7f, avatar.Width, avatar.Height * 0.3f);
+            avatar.Mutate(x => x.Fill(Color.Black, backgroundRect));
+            avatar.Mutate(x => x.DrawText(headline, font, Color.Gold, position));
+            avatar.Mutate(x => x.DrawText(description, descFont, Color.White, descPosition));
+            avatar.Save(tempFile);
+            return tempFile;
 
         }
         private static string GetLevelDesc(int level)
@@ -56,25 +74,6 @@ namespace DisbotNext.Helpers
                 var x when x < 40 => "'ผู้อำนวยการ'",
                 _ => "'เจ้าของบริษัท'"
             };
-        }
-
-        private static Image Resize(Image img, int outputWidth, int outputHeight)
-        {
-
-            if (img == null || (img.Width == outputWidth && img.Height == outputHeight)) return img;
-            Bitmap outputImage;
-            Graphics graphics;
-            try
-            {
-                outputImage = new Bitmap(outputWidth, outputHeight, System.Drawing.Imaging.PixelFormat.Format16bppRgb555);
-                graphics = Graphics.FromImage(outputImage);
-                graphics.DrawImage(img, new Rectangle(0, 0, outputWidth, outputHeight), new Rectangle(0, 0, img.Width, img.Height), GraphicsUnit.Pixel);
-                return outputImage;
-            }
-            catch
-            {
-                throw;
-            }
         }
     }
 }
