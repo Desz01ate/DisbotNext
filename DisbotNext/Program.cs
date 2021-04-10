@@ -1,6 +1,7 @@
 ﻿using DisbotNext.Common.Configurations;
 using DisbotNext.DiscordClient;
 using DisbotNext.ExternalServices.CovidTracker;
+using DisbotNext.ExternalServices.OildPriceChecker;
 using DisbotNext.Infrastructure.Common;
 using DisbotNext.Infrastructures.Sqlite;
 using Hangfire;
@@ -37,6 +38,7 @@ namespace DisbotNext
                     services.AddSingleton<DisbotNextClient>();
                     services.AddScoped<UnitOfWork>();
                     services.AddTransient<ICovidTracker, CovidTracker>();
+                    services.AddTransient<IOilPriceChecker, OilPriceWebScraping>();
                     services.AddTransient(_ => GetConfiguration());
                     services.AddHostedService<Application>();
                 })
