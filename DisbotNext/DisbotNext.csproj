@@ -22,10 +22,14 @@
 
   <ItemGroup>
     <Folder Include="Assets\" />
+    <Folder Include="Model\" />
   </ItemGroup>
 
   <ItemGroup>
     <None Update="Assets\language.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Model\MLModel.zip">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

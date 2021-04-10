@@ -43,7 +43,7 @@ namespace DisbotNext.Infrastructures.Common.Models
             return levelUp;
         }
 
-        public static Member NewMember(ulong id)
+        internal static Member NewMember(ulong id)
         {
             return new Member(id, 1, 0);
         }

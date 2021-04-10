@@ -1,27 +1,24 @@
 ﻿using DisbotNext.ExternalServices.CovidTracker;
 using DisbotNext.Infrastructure.Common;
-using DisbotNext.Infrastructures.Sqlite;
+using DisbotNext.Common.Extensions;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
-using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace DisbotNext.DiscordClient.Commands
 {
     public class CommandsHandler : BaseCommandModule
     {
-        private readonly DisbotDbContext _dbContext;
+        private readonly UnitOfWork _unitOfWork;
         private readonly ICovidTracker _covidTracker;
-        public CommandsHandler(DisbotDbContext dbContext,
+        public CommandsHandler(UnitOfWork unitOfWork,
                                ICovidTracker covidTracker)
         {
-            this._dbContext = dbContext;
+            this._unitOfWork = unitOfWork;
             this._covidTracker = covidTracker;
         }
 
@@ -54,6 +51,24 @@ namespace DisbotNext.DiscordClient.Commands
                 Color = new Optional<DiscordColor>(DiscordColor.Red),
             };
             await ctx.RespondAsync(embed);
+        }
+
+        [RequireOwner]
+        [Command("dumpdb")]
+        public async Task GetDatabaseDumpFile(CommandContext ctx)
+        {
+            File.Copy("Local.db", "Copy_of_Local.db", true);
+
+            if (ctx.Member == null)
+            {
+                await ctx.Channel.SendFileAsync("Copy_of_Local.db");
+            }
+            else
+            {
+                var dm = await ctx.Member.CreateDmChannelAsync();
+                await dm.SendFileAsync("Copy_of_Local.db");
+            }
+            File.Delete("Copy_of_Local.db");
         }
     }
 }
