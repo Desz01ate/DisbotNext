@@ -1,16 +1,13 @@
 ﻿using DisbotNext.ExternalServices.CovidTracker;
 using DisbotNext.Infrastructure.Common;
-using DisbotNext.Infrastructures.Sqlite;
+using DisbotNext.Common.Extensions;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
-using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace DisbotNext.DiscordClient.Commands
 {
@@ -54,6 +51,24 @@ namespace DisbotNext.DiscordClient.Commands
                 Color = new Optional<DiscordColor>(DiscordColor.Red),
             };
             await ctx.RespondAsync(embed);
+        }
+
+        [RequireOwner]
+        [Command("dumpdb")]
+        public async Task GetDatabaseDumpFile(CommandContext ctx)
+        {
+            File.Copy("Local.db", "Copy_of_Local.db", true);
+
+            if (ctx.Member == null)
+            {
+                await ctx.Channel.SendFileAsync("Copy_of_Local.db");
+            }
+            else
+            {
+                var dm = await ctx.Member.CreateDmChannelAsync();
+                await dm.SendFileAsync("Copy_of_Local.db");
+            }
+            File.Delete("Copy_of_Local.db");
         }
     }
 }
