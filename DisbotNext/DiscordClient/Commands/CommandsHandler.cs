@@ -8,6 +8,9 @@ using System;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using DisbotNext.ExternalServices.OildPriceChecker;
+using System.Linq;
+using SixLabors.ImageSharp;
 
 namespace DisbotNext.DiscordClient.Commands
 {
@@ -15,11 +18,14 @@ namespace DisbotNext.DiscordClient.Commands
     {
         private readonly UnitOfWork _unitOfWork;
         private readonly ICovidTracker _covidTracker;
+        private readonly IOilPriceChecker _oilPriceChecker;
         public CommandsHandler(UnitOfWork unitOfWork,
-                               ICovidTracker covidTracker)
+                               ICovidTracker covidTracker,
+                               IOilPriceChecker oilPriceChecker)
         {
             this._unitOfWork = unitOfWork;
             this._covidTracker = covidTracker;
+            this._oilPriceChecker = oilPriceChecker;
         }
 
         [Command("test")]
@@ -51,6 +57,22 @@ namespace DisbotNext.DiscordClient.Commands
                 Color = new Optional<DiscordColor>(DiscordColor.Red),
             };
             await ctx.RespondAsync(embed);
+        }
+
+        [Command("oilprice")]
+        public async Task GetOilPriceAsync(CommandContext ctx)
+        {
+            var prices = await this._oilPriceChecker.GetOilPriceAsync();
+            foreach (var price in prices)
+            {
+                var embed = new DiscordEmbedBuilder()
+                {
+                    Title = price.RetailName,
+                    Description = string.Join("\n", price.Types.Select(x => $"{x.Type} : {x.PricePerLitre} บาท/ลิตร")),
+                    Color = DiscordColor.Green
+                };
+                await ctx.RespondAsync(embed.Build());
+            }
         }
 
         [RequireOwner]
