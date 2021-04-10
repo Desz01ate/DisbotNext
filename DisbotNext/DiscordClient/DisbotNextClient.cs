@@ -15,18 +15,30 @@ using System;
 using DSharpPlus.CommandsNext;
 using DisbotNext.Infrastructures.Common.Models;
 using DisbotNext.Infrastructure.Common;
+using Hangfire;
+using System.Threading;
+using Hangfire.SQLite;
 
 namespace DisbotNext.DiscordClient
 {
     public class DisbotNextClient : DiscordClientAbstract
     {
+        private readonly SemaphoreSlim semaphore;
+
         private readonly UnitOfWork _unitOfWork;
+
+        private readonly IBackgroundJobClient _backgroundJobClient;
         public override IReadOnlyList<DiscordChannel> Channels => base.Channels;
+
         public DisbotNextClient(IServiceProvider service,
+                                IBackgroundJobClient backgroundJobClient,
                                 UnitOfWork unitOfWork,
                                 DiscordConfigurations configuration) : base(configuration)
         {
+            this.semaphore = new SemaphoreSlim(1, 1);
+
             this._unitOfWork = unitOfWork;
+            this._backgroundJobClient = backgroundJobClient;
             this.Client.MessageCreated += Client_MessageCreated;
             this.Client.MessageReactionAdded += Client_MessageReactionAdded;
             this.Client.MessageReactionRemoved += Client_MessageReactionRemoved;
@@ -42,12 +54,33 @@ namespace DisbotNext.DiscordClient
             });
             commands.RegisterCommands<CommandsHandler>();
             commands.CommandErrored += Commands_CommandErrored;
+
+            RecurringJob.AddOrUpdate(() => DeleteTempChannels(), Cron.Minutely());
         }
 
-        private Task Commands_CommandErrored(CommandsNextExtension sender, CommandErrorEventArgs e)
+        public async Task DeleteTempChannels()
         {
-            Console.WriteLine(e.Exception);
-            return Task.CompletedTask;
+            await this.semaphore.WaitAsync();
+            foreach (var channel in this._unitOfWork.TempChannelRepository)
+            {
+                if (channel.ExpiredAt <= DateTime.Now)
+                {
+                    try
+                    {
+                        var tempChannel = await this.Client.GetChannelAsync(channel.Id);
+                        if ((tempChannel.Type == DSharpPlus.ChannelType.Voice && !tempChannel.Users.Any()) || tempChannel.Type != DSharpPlus.ChannelType.Voice)
+                        {
+                            await tempChannel.DeleteAsync("expired");
+                        }
+                    }
+                    finally
+                    {
+                        await this._unitOfWork.TempChannelRepository.DeleteAsync(channel);
+                    }
+                }
+            }
+            await this._unitOfWork.SaveChangesAsync();
+            this.semaphore.Release();
         }
 
         private async Task Client_PresenceUpdated(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.PresenceUpdateEventArgs e)
@@ -62,22 +95,31 @@ namespace DisbotNext.DiscordClient
                 var parentCategoryChannel = channels.FirstOrDefault(x => x.Name == presence.Activity.Name && x.Type == DSharpPlus.ChannelType.Category) ?? await guild.CreateChannelAsync(presence.Activity.Name, DSharpPlus.ChannelType.Category);
                 var textChannel = await guild.CreateChannelAsync("text", DSharpPlus.ChannelType.Text, parentCategoryChannel);
                 var voiceChannel = await guild.CreateChannelAsync("voice", DSharpPlus.ChannelType.Voice, parentCategoryChannel);
-                DeleteTemporaryChannelsAsync(parentCategoryChannel, voiceChannel, textChannel);
 
-                async Task DeleteTemporaryChannelsAsync(DiscordChannel parentChannel, DiscordChannel voiceChannel, DiscordChannel textChannel)
+                var createdAt = DateTime.Now;
+
+                await QueueDeleteTempChannelAsync(parentCategoryChannel, createdAt);
+                await QueueDeleteTempChannelAsync(textChannel, createdAt);
+                await QueueDeleteTempChannelAsync(voiceChannel, createdAt);
+
+                await this._unitOfWork.SaveChangesAsync();
+                async Task QueueDeleteTempChannelAsync(DiscordChannel channel, DateTime createdAt)
                 {
-                    // 1000 ms x 60 seconds x 60 minutes
-                    var interval = 1000 * 60 * 60;
-                    await Task.Delay(interval);
-                    if (voiceChannel.Users.Count() > 0)
+                    await this._unitOfWork.TempChannelRepository.InsertAsync(new Infrastructure.Common.Models.TempChannel
                     {
-                        await DeleteTemporaryChannelsAsync(parentChannel, voiceChannel, textChannel);
-                    }
-                    await voiceChannel.DeleteAsync();
-                    await textChannel.DeleteAsync();
-                    await parentChannel.DeleteAsync();
+                        Id = channel.Id,
+                        ChannelName = channel.Name,
+                        CreatedAt = createdAt,
+                        ExpiredAt = createdAt.AddHours(1),
+                    });
                 }
             }
+        }
+
+        private Task Commands_CommandErrored(CommandsNextExtension sender, CommandErrorEventArgs e)
+        {
+            Console.WriteLine(e.Exception);
+            return Task.CompletedTask;
         }
 
 

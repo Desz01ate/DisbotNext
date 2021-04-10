@@ -20,11 +20,14 @@ namespace DisbotNext.Infrastructure.Common
             this.dbContext = dbContext;
             this.MemberRepository = new MemberRepository(dbContext);
             this.ChatLogRepository = new ChatLogRepository(dbContext);
+            this.TempChannelRepository = new TempChannelRepository(dbContext);
         }
 
         public IMemberRepository MemberRepository { get; }
 
         public IChatLogRepository ChatLogRepository { get; }
+
+        public ITempChannelRepository TempChannelRepository { get; }
 
         public Task SaveChangesAsync(CancellationToken cancellationToken = default)
         {

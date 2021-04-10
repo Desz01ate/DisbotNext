@@ -1,7 +1,10 @@
 ﻿using DisbotNext.DiscordClient;
+using DisbotNext.Infrastructure.Common;
+using Hangfire;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -11,18 +14,22 @@ namespace DisbotNext
 {
     public class Application : IHostedService
     {
-        private readonly DisbotNextClient client;
+        private readonly DisbotNextClient _client;
 
-        public Application(DisbotNextClient client)
+        private readonly UnitOfWork _unitOfWork;
+
+        public Application(DisbotNextClient client,
+                           UnitOfWork unitOfWork)
         {
-            this.client = client;
+            this._client = client;
+            this._unitOfWork = unitOfWork;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             try
             {
-                await this.client.ConnectAsync();
+                await this._client.ConnectAsync();
                 await Task.Delay(-1);
             }
             catch (Exception ex)
@@ -34,7 +41,7 @@ namespace DisbotNext
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
-            await this.client.DisposeAsync();
+            await this._client.DisposeAsync();
         }
     }
 }

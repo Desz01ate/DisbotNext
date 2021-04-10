@@ -49,5 +49,18 @@ namespace DisbotNext.Infrastructure.Common.Repository
             var result = this.dbContext.ChatLogs.Where(predicate);
             return ValueTask.FromResult(result);
         }
+
+        public IEnumerator<ChatLog> GetEnumerator()
+        {
+            foreach (var log in this.dbContext.ChatLogs)
+            {
+                yield return log;
+            }
+        }
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            return this.GetEnumerator();
+        }
     }
 }

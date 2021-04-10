@@ -61,5 +61,18 @@ namespace DisbotNext.Infrastructure.Common.Repository
             var result = this.dbContext.Members.Where(predicate);
             return ValueTask.FromResult(result);
         }
+
+        public IEnumerator<Member> GetEnumerator()
+        {
+            foreach (var member in this.dbContext.Members)
+            {
+                yield return member;
+            }
+        }
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            return this.GetEnumerator();
+        }
     }
 }

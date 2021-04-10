@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace DisbotNext.Infrastructure.Common.Repository.Interface
 {
-    public interface IGenericRepository<T>
+    public interface IGenericRepository<T> : IEnumerable<T>
     {
         /// <summary>
         /// Find object in repository by id.
