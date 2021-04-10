@@ -27,6 +27,7 @@ namespace DisbotNext
                     services.AddHttpClient();
                     services.AddDbContext<DisbotDbContext, SqliteDbContext>();
                     services.AddSingleton<DisbotNextClient>();
+                    services.AddScoped<UnitOfWork>();
                     services.AddTransient<ICovidTracker, CovidTracker>();
                     services.AddTransient(_ => GetConfiguration());
                     services.AddHostedService<Application>();

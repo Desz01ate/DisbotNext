@@ -16,12 +16,12 @@ namespace DisbotNext.DiscordClient.Commands
 {
     public class CommandsHandler : BaseCommandModule
     {
-        private readonly DisbotDbContext _dbContext;
+        private readonly UnitOfWork _unitOfWork;
         private readonly ICovidTracker _covidTracker;
-        public CommandsHandler(DisbotDbContext dbContext,
+        public CommandsHandler(UnitOfWork unitOfWork,
                                ICovidTracker covidTracker)
         {
-            this._dbContext = dbContext;
+            this._unitOfWork = unitOfWork;
             this._covidTracker = covidTracker;
         }
 

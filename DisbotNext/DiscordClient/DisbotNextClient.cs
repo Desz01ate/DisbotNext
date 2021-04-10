@@ -20,13 +20,13 @@ namespace DisbotNext.DiscordClient
 {
     public class DisbotNextClient : DiscordClientAbstract
     {
-        private readonly DisbotDbContext _dbContext;
+        private readonly UnitOfWork _unitOfWork;
         public override IReadOnlyList<DiscordChannel> Channels => base.Channels;
         public DisbotNextClient(IServiceProvider service,
-                                DisbotDbContext dbContext, 
+                                UnitOfWork unitOfWork,
                                 DiscordConfigurations configuration) : base(configuration)
         {
-            this._dbContext = dbContext;
+            this._unitOfWork = unitOfWork;
             this.Client.MessageCreated += Client_MessageCreated;
             this.Client.MessageReactionAdded += Client_MessageReactionAdded;
             this.Client.MessageReactionRemoved += Client_MessageReactionRemoved;
@@ -83,8 +83,8 @@ namespace DisbotNext.DiscordClient
 
         private async Task Client_GuildMemberAdded(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.GuildMemberAddEventArgs e)
         {
-            var user = this._dbContext.Members.FindAsync(e.Member.Id);
-            await this._dbContext.SaveChangesAsync();
+            var user = this._unitOfWork.MemberRepository.FindOrCreateAsync(e.Member.Id);
+            await this._unitOfWork.SaveChangesAsync();
         }
 
         private async System.Threading.Tasks.Task Client_MessageReactionRemoved(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.MessageReactionRemoveEventArgs e)
@@ -93,9 +93,9 @@ namespace DisbotNext.DiscordClient
             var message = await channel.GetMessageAsync(e.Message.Id);
             if (this.Channels.Contains(channel) && message.Author.Id != this.Client.CurrentUser.Id && message.Author.Id != e.User.Id)
             {
-                var user = await this._dbContext.Members.FindAsync(message.Author.Id);
+                var user = await this._unitOfWork.MemberRepository.FindOrCreateAsync(message.Author.Id);
                 user.ExpGained(-1);
-                await this._dbContext.SaveChangesAsync();
+                await this._unitOfWork.SaveChangesAsync();
             }
         }
 
@@ -105,9 +105,9 @@ namespace DisbotNext.DiscordClient
             var message = await channel.GetMessageAsync(e.Message.Id);
             if (this.Channels.Contains(channel) && message.Author.Id != this.Client.CurrentUser.Id && message.Author.Id != e.User.Id)
             {
-                var user = await this._dbContext.Members.FindAsync(message.Author.Id);
+                var user = await this._unitOfWork.MemberRepository.FindOrCreateAsync(message.Author.Id);
                 user.ExpGained(1);
-                await this._dbContext.SaveChangesAsync();
+                await this._unitOfWork.SaveChangesAsync();
                 await channel.SendDisposableMessageAsync($"มีคนชอบข้อความที่คุณเขียน {message.Author.Mention} และคุณได้รับ 1 EXP!");
             }
         }
@@ -124,7 +124,7 @@ namespace DisbotNext.DiscordClient
                     await channel.SendFileAsync(Path.Combine(Directory.GetCurrentDirectory(), "Assets", "language.jpg"));
                     return;
                 }
-                var user = await this._dbContext.Members.FindAsync(e.Author.Id);
+                var user = await this._unitOfWork.MemberRepository.FindOrCreateAsync(e.Author.Id);
                 var levelUp = user.ExpGained(1);
                 if (levelUp)
                 {
@@ -132,13 +132,13 @@ namespace DisbotNext.DiscordClient
                     await channel.SendMessageAsync($"🎉🎉🎉 🥂{e.Author.Mention}🥂 ได้อัพเลเวลเป็น {user.Level}! 🎉🎉🎉 ");
                     await channel.SendFileAsync(avatar);
                 }
-                await this._dbContext.ChatLogs.AddAsync(new ChatLog
+                await this._unitOfWork.ChatLogRepository.InsertAsync(new ChatLog
                 {
                     Author = user,
                     Content = e.Message.Content,
                     CreateAt = DateTime.Now
                 });
-                await this._dbContext.SaveChangesAsync();
+                await this._unitOfWork.SaveChangesAsync();
 
             }
         }
