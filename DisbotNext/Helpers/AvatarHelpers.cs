@@ -24,6 +24,7 @@ namespace DisbotNext.Helpers
             var bytes = webClient.DownloadData(url);
             using var stream = new MemoryStream(bytes);
             using var avatar = Image.Load(stream);
+            avatar.Mutate(x => x.Resize(128, 128));
             var fontCollection = new FontCollection();
             if (!fontCollection.TryFind("Tahoma", out FontFamily? fontFamily))
             {
@@ -33,8 +34,8 @@ namespace DisbotNext.Helpers
             var headline = $"Level {level}";
             var description = GetLevelDesc(level);
 
-            var font = fontFamily.CreateFont(25);
-            var descFont = fontFamily.CreateFont(15);
+            var font = fontFamily.CreateFont(12);
+            var descFont = fontFamily.CreateFont(10);
             var scalingFactor = Math.Min(avatar.Width / avatar.Width, avatar.Height / avatar.Height);
 
             var scaledFont = new Font(font, scalingFactor * font.Size);

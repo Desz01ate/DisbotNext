@@ -10,6 +10,8 @@ namespace DisbotNext.ExternalServices.OildPriceChecker
     {
         public string Type { get; set; }
 
-        public string PricePerLitre { get; set; }
+        public string RetailName { get; set; }
+
+        public decimal? PricePerLitre { get; set; }
     }
 }

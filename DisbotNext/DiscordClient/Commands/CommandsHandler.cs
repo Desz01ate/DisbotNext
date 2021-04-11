@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using System.IO;
 using DisbotNext.ExternalServices.OildPriceChecker;
 using System.Linq;
-using SixLabors.ImageSharp;
+using System.Collections.Generic;
 
 namespace DisbotNext.DiscordClient.Commands
 {
@@ -41,15 +41,16 @@ namespace DisbotNext.DiscordClient.Commands
             if (result == null)
             {
                 await ctx.RespondAsync($"ไม่พบประเทศ '{country}' ในระบบ");
+                return;
             }
             var sb = new StringBuilder();
-            sb.AppendLine($"😷 จำนวนผู้ติดเชื้อที่พบวันนี้ {result.TodayCases}");
-            sb.AppendLine($"😷 จำนวนผู้ติดเชื้อที่พบทั้งสิ้น {result.Cases}");
-            sb.AppendLine($"💀 จำนวนผู้เสียชีวิตวันนี้ {result.TodayDeaths}");
-            sb.AppendLine($"💀 จำนวนผู้เสียชีวิตทั้งสิ้น {result.Deaths}");
-            sb.AppendLine($"🏨 จำนวนผู้ป่วยอาการวิกฤตทั้งสิ้น {result.Critical}");
-            sb.AppendLine($"🏨 จำนวนผู้ป่วยที่กำลังรักษาตัว {result.Active}");
-            sb.AppendLine($"👌 จำนวนผู้ป่วยที่รักษาหายแล้วทั้งสิ้น {result.Recovered}");
+            sb.AppendLine($"😷 จำนวนผู้ติดเชื้อที่พบวันนี้ {result.TodayCases:n0}");
+            sb.AppendLine($"😷 จำนวนผู้ติดเชื้อที่พบทั้งสิ้น {result.Cases:n0}");
+            sb.AppendLine($"💀 จำนวนผู้เสียชีวิตวันนี้ {result.TodayDeaths:n0}");
+            sb.AppendLine($"💀 จำนวนผู้เสียชีวิตทั้งสิ้น {result.Deaths:n0}");
+            sb.AppendLine($"🏨 จำนวนผู้ป่วยอาการวิกฤตทั้งสิ้น {result.Critical:n0}");
+            sb.AppendLine($"🏨 จำนวนผู้ป่วยที่กำลังรักษาตัว {result.Active:n0}");
+            sb.AppendLine($"👌 จำนวนผู้ป่วยที่รักษาหายแล้วทั้งสิ้น {result.Recovered:n0}");
             var embed = new DiscordEmbedBuilder()
             {
                 Title = $"สถานการณ์ของ {result.Country} ณ วันที่ {DateTime.Now.ToString("dd/MM/yyyy")}",
@@ -63,16 +64,43 @@ namespace DisbotNext.DiscordClient.Commands
         public async Task GetOilPriceAsync(CommandContext ctx)
         {
             var prices = await this._oilPriceChecker.GetOilPriceAsync();
-            foreach (var price in prices)
+            var today = prices.SelectMany(x => x.Types)
+                               .Where(x => x.PricePerLitre != null && x.RetailName != "พรุ่งนี้")
+                               .GroupBy(x => x.Type)
+                               .Select(x => new
+                               {
+                                   Type = x.Key,
+                                   Info = x.OrderBy(y => y.PricePerLitre.Value).First()
+                               }).ToArray();
+
+            var tomorrow = prices.SelectMany(x => x.Types)
+                               .Where(x => x.PricePerLitre != null && x.RetailName == "พรุ่งนี้")
+                               .GroupBy(x => x.Type)
+                               .Select(x => new
+                               {
+                                   Type = x.Key,
+                                   Info = x.OrderBy(y => y.PricePerLitre.Value).First()
+                               }).ToArray();
+            var embed = new DiscordEmbedBuilder()
             {
-                var embed = new DiscordEmbedBuilder()
-                {
-                    Title = price.RetailName,
-                    Description = string.Join("\n", price.Types.Select(x => $"{x.Type} : {x.PricePerLitre} บาท/ลิตร")),
-                    Color = DiscordColor.Green
-                };
-                await ctx.RespondAsync(embed.Build());
+                Title = $"ราคาน้ำมัน ณ วันที่ {DateTime.Now.ToString("dd/MM/yyyy")}",
+                Description = string.Join("\n", today.Select(x => $"{x.Type} : {x.Info.PricePerLitre} บาท/ลิตร ({x.Info.RetailName})")),
+                Color = DiscordColor.Green,
+            };
+            await ctx.RespondAsync(embed.Build());
+
+            var list = new List<string>();
+            foreach (var (todayType, tomorrowType) in today.Zip(tomorrow))
+            {
+                var todayPrice = todayType.Info.PricePerLitre.Value;
+                var tomorrowPrice = tomorrowType.Info.PricePerLitre.Value;
+                var diff = Math.Round((tomorrowPrice / todayPrice) * 100 - 100, 0);
+                var displayDiff = diff == 0 ? "ไม่เปลี่ยนแปลง" : $"{(diff > 0 ? "+" : "")}{diff}%";
+                list.Add($"{tomorrowType.Type} : {tomorrowPrice} บาท/ลิตร ({displayDiff})");
             }
+            embed.Title = "ราคาน้ำมันวันพรุ่งนี้";
+            embed.Description = string.Join("\n", list);
+            await ctx.RespondAsync(embed.Build());
         }
 
         [RequireOwner]
