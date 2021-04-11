@@ -10,8 +10,6 @@ using System.Threading.Tasks;
 using System.IO;
 using DisbotNext.ExternalServices.OildPriceChecker;
 using System.Linq;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.ColorSpaces;
 using System.Collections.Generic;
 
 namespace DisbotNext.DiscordClient.Commands
@@ -43,15 +41,16 @@ namespace DisbotNext.DiscordClient.Commands
             if (result == null)
             {
                 await ctx.RespondAsync($"ไม่พบประเทศ '{country}' ในระบบ");
+                return;
             }
             var sb = new StringBuilder();
-            sb.AppendLine($"😷 จำนวนผู้ติดเชื้อที่พบวันนี้ {result.TodayCases}");
-            sb.AppendLine($"😷 จำนวนผู้ติดเชื้อที่พบทั้งสิ้น {result.Cases}");
-            sb.AppendLine($"💀 จำนวนผู้เสียชีวิตวันนี้ {result.TodayDeaths}");
-            sb.AppendLine($"💀 จำนวนผู้เสียชีวิตทั้งสิ้น {result.Deaths}");
-            sb.AppendLine($"🏨 จำนวนผู้ป่วยอาการวิกฤตทั้งสิ้น {result.Critical}");
-            sb.AppendLine($"🏨 จำนวนผู้ป่วยที่กำลังรักษาตัว {result.Active}");
-            sb.AppendLine($"👌 จำนวนผู้ป่วยที่รักษาหายแล้วทั้งสิ้น {result.Recovered}");
+            sb.AppendLine($"😷 จำนวนผู้ติดเชื้อที่พบวันนี้ {result.TodayCases:n0}");
+            sb.AppendLine($"😷 จำนวนผู้ติดเชื้อที่พบทั้งสิ้น {result.Cases:n0}");
+            sb.AppendLine($"💀 จำนวนผู้เสียชีวิตวันนี้ {result.TodayDeaths:n0}");
+            sb.AppendLine($"💀 จำนวนผู้เสียชีวิตทั้งสิ้น {result.Deaths:n0}");
+            sb.AppendLine($"🏨 จำนวนผู้ป่วยอาการวิกฤตทั้งสิ้น {result.Critical:n0}");
+            sb.AppendLine($"🏨 จำนวนผู้ป่วยที่กำลังรักษาตัว {result.Active:n0}");
+            sb.AppendLine($"👌 จำนวนผู้ป่วยที่รักษาหายแล้วทั้งสิ้น {result.Recovered:n0}");
             var embed = new DiscordEmbedBuilder()
             {
                 Title = $"สถานการณ์ของ {result.Country} ณ วันที่ {DateTime.Now.ToString("dd/MM/yyyy")}",
