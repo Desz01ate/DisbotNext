@@ -38,6 +38,8 @@ namespace DisbotNext.Infrastructures.Common.Models
             {
                 this.Level += 1;
                 this.Exp = this.NextExp - this.Exp;
+                if (this.Exp < 0)
+                    this.Exp = 0;
                 levelUp = true;
             }
             return levelUp;
