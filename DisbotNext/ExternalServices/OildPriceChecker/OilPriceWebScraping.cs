@@ -35,10 +35,13 @@ namespace DisbotNext.ExternalServices.OildPriceChecker
                     var oilTypeDesc = oilType.ChildNodes[0].InnerHtml;
                     var price = oilType.ChildNodes[i + 1].InnerHtml;
 
+                    var isValidPrice = decimal.TryParse(price, out var pricePerLitre);
+
                     types.Add(new OilType
                     {
+                        RetailName = retail.RetailName,
                         Type = oilTypeDesc,
-                        PricePerLitre = price,
+                        PricePerLitre = isValidPrice ? pricePerLitre : null,
                     });
                 }
                 retail.Types = types;
