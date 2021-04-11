@@ -11,19 +11,23 @@ using System.IO;
 using DisbotNext.ExternalServices.OildPriceChecker;
 using System.Linq;
 using System.Collections.Generic;
+using DisbotNext.Common.Configurations;
 
 namespace DisbotNext.DiscordClient.Commands
 {
     public class CommandsHandler : BaseCommandModule
     {
         private readonly UnitOfWork _unitOfWork;
+        private readonly DiscordConfigurations configurations;
         private readonly ICovidTracker _covidTracker;
         private readonly IOilPriceChecker _oilPriceChecker;
         public CommandsHandler(UnitOfWork unitOfWork,
+                               DiscordConfigurations configurations,
                                ICovidTracker covidTracker,
                                IOilPriceChecker oilPriceChecker)
         {
             this._unitOfWork = unitOfWork;
+            this.configurations = configurations;
             this._covidTracker = covidTracker;
             this._oilPriceChecker = oilPriceChecker;
         }
@@ -119,6 +123,33 @@ namespace DisbotNext.DiscordClient.Commands
                 await dm.SendFileAsync("Copy_of_Local.db");
             }
             File.Delete("Copy_of_Local.db");
+        }
+
+        [RequirePermissions(DSharpPlus.Permissions.Administrator)]
+        [Command("clean")]
+        public async Task CleanMessagesAsync(CommandContext ctx, ulong textChannelId, string type = "bot")
+        {
+            try
+            {
+                var channel = await ctx.Client.GetChannelAsync(textChannelId);
+                if (channel.Type != DSharpPlus.ChannelType.Text)
+                {
+                    await ctx.RespondAsync($"Channel {textChannelId} is not text channel, thus it contains no message.");
+                    return;
+                }
+                var messages = await channel.GetMessagesAsync(10000);
+                foreach (var message in messages)
+                {
+                    if ((type == "bot" && message.Author.IsBot) || type == "all" || message.Content.StartsWith(this.configurations.CommandPrefix))
+                    {
+                        await message.DeleteAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
         }
     }
 }
