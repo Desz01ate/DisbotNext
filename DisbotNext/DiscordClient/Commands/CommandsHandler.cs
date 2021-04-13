@@ -107,6 +107,26 @@ namespace DisbotNext.DiscordClient.Commands
             await ctx.RespondAsync(embed.Build());
         }
 
+        [Command("automove")]
+        public async Task SetAutoMoveAsync(CommandContext ctx, string onOff)
+        {
+            var member = await this._unitOfWork.MemberRepository.FindOrCreateAsync(ctx.Member.Id);
+            switch (onOff.ToLowerInvariant())
+            {
+                case "on":
+                    member.AutoMoveToChannel = true;
+                    break;
+                case "off":
+                    member.AutoMoveToChannel = false;
+                    break;
+                default:
+                    await ctx.RespondAsync($"ออพชัน {onOff} ไม่รองรับในตอนนี้ (คีย์เวิร์ดที่รองรับ on,off)");
+                    return;
+            }
+            await this._unitOfWork.SaveChangesAsync();
+            await ctx.Channel.SendDisposableMessageAsync($"สถานะเคลื่อนย้ายอัตโนมัติของ {ctx.Member.Mention} ได้ถูกเปลี่ยนเป็น {(member.AutoMoveToChannel ? "เปิดใช้งาน" : "ปิดใช้งาน")} แล้ว");
+        }
+
         [RequireOwner]
         [Command("dumpdb")]
         public async Task GetDatabaseDumpFile(CommandContext ctx)
