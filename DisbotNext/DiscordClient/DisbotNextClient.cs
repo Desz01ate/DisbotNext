@@ -96,6 +96,18 @@ namespace DisbotNext.DiscordClient
                 var textChannel = await guild.CreateChannelAsync("text", DSharpPlus.ChannelType.Text, parentCategoryChannel);
                 var voiceChannel = await guild.CreateChannelAsync("voice", DSharpPlus.ChannelType.Voice, parentCategoryChannel);
 
+                var user = await this._unitOfWork.MemberRepository.FindOrCreateAsync(e.User.Id);
+                if (user.AutoMoveToChannel)
+                {
+                    var member = await guild.GetMemberAsync(user.Id);
+                    var voiceState = member.VoiceState;
+                    // we can only move people when they are already in any voice channel.
+                    if (voiceState != null)
+                    {
+                        await voiceChannel.PlaceMemberAsync(member);
+                    }
+                }
+
                 var createdAt = DateTime.Now;
 
                 await QueueDeleteTempChannelAsync(parentCategoryChannel, createdAt);

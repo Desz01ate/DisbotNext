@@ -12,6 +12,8 @@ namespace DisbotNext.Infrastructures.Common.Models
 
         public double Exp { get; private set; }
 
+        public bool AutoMoveToChannel { get; set; }
+
         public virtual List<ChatLog> ChatLogs { get; set; }
 
         public double NextExp => Math.Round(Level + Math.Pow(Level / 2, 1.115) * Math.Sqrt(Level), 0);
@@ -23,11 +25,13 @@ namespace DisbotNext.Infrastructures.Common.Models
 
         public Member(ulong id,
                       int level,
-                      double exp)
+                      double exp,
+                      bool autoMoveToChannel)
         {
             Id = id;
             Level = level;
             Exp = exp;
+            AutoMoveToChannel = autoMoveToChannel;
         }
 
         public bool ExpGained(double exp)
@@ -47,7 +51,7 @@ namespace DisbotNext.Infrastructures.Common.Models
 
         internal static Member NewMember(ulong id)
         {
-            return new Member(id, 1, 0);
+            return new Member(id, 1, 0, false);
         }
     }
 }
