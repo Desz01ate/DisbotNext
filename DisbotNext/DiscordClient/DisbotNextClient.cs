@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using DisbotNext.Common.Extensions;
-using DisbotNext.Infrastructures.Sqlite;
 using DisbotNext.Helpers;
 using Laploy.ThaiSen.ML;
 using System.Threading.Tasks;
@@ -17,7 +16,6 @@ using DisbotNext.Infrastructures.Common.Models;
 using DisbotNext.Infrastructure.Common;
 using Hangfire;
 using System.Threading;
-using Hangfire.SQLite;
 
 namespace DisbotNext.DiscordClient
 {
@@ -88,13 +86,14 @@ namespace DisbotNext.DiscordClient
             var presence = e.PresenceAfter;
             var guild = presence.Guild;
             var channels = await guild.GetChannelsAsync();
+            DiscordChannel? parentCategoryChannel, textChannel, voiceChannel;
             if (!channels.Any(x => x.Name.ToLowerInvariant() == presence?.Activity?.Name?.ToLowerInvariant()))
             {
                 if (presence.Activity.Name == "Custom Status")
                     return;
-                var parentCategoryChannel = channels.FirstOrDefault(x => x.Name == presence.Activity.Name && x.Type == DSharpPlus.ChannelType.Category) ?? await guild.CreateChannelAsync(presence.Activity.Name, DSharpPlus.ChannelType.Category);
-                var textChannel = await guild.CreateChannelAsync("text", DSharpPlus.ChannelType.Text, parentCategoryChannel);
-                var voiceChannel = await guild.CreateChannelAsync("voice", DSharpPlus.ChannelType.Voice, parentCategoryChannel);
+                parentCategoryChannel = channels.FirstOrDefault(x => x.Name == presence.Activity.Name && x.Type == DSharpPlus.ChannelType.Category) ?? await guild.CreateChannelAsync(presence.Activity.Name, DSharpPlus.ChannelType.Category);
+                textChannel = await guild.CreateChannelAsync("text", DSharpPlus.ChannelType.Text, parentCategoryChannel);
+                voiceChannel = await guild.CreateChannelAsync("voice", DSharpPlus.ChannelType.Voice, parentCategoryChannel);
 
                 var user = await this._unitOfWork.MemberRepository.FindOrCreateAsync(e.User.Id);
                 if (user.AutoMoveToChannel)
@@ -115,16 +114,34 @@ namespace DisbotNext.DiscordClient
                 await QueueDeleteTempChannelAsync(voiceChannel, createdAt);
 
                 await this._unitOfWork.SaveChangesAsync();
-                async Task QueueDeleteTempChannelAsync(DiscordChannel channel, DateTime createdAt)
+            }
+            else
+            {
+                parentCategoryChannel = channels.Single(x => x.Name.ToLowerInvariant() == presence?.Activity?.Name?.ToLowerInvariant());
+                voiceChannel = parentCategoryChannel.Children.SingleOrDefault(x => x.Name.ToLowerInvariant() == "voice");
+            }
+
+            var memberInRepo = await this._unitOfWork.MemberRepository.FindOrCreateAsync(e.User.Id);
+            if (memberInRepo.AutoMoveToChannel)
+            {
+                var guildMember = await guild.GetMemberAsync(memberInRepo.Id);
+                var voiceState = guildMember.VoiceState;
+                // we can only move people when they are already in any voice channel.
+                if (voiceState != null && voiceChannel != null && voiceState.Channel.Id != voiceChannel.Id)
                 {
-                    await this._unitOfWork.TempChannelRepository.InsertAsync(new Infrastructure.Common.Models.TempChannel
-                    {
-                        Id = channel.Id,
-                        ChannelName = channel.Name,
-                        CreatedAt = createdAt,
-                        ExpiredAt = createdAt.AddHours(1),
-                    });
+                    await voiceChannel.PlaceMemberAsync(guildMember);
                 }
+            }
+
+            async Task QueueDeleteTempChannelAsync(DiscordChannel channel, DateTime createdAt)
+            {
+                await this._unitOfWork.TempChannelRepository.InsertAsync(new Infrastructure.Common.Models.TempChannel
+                {
+                    Id = channel.Id,
+                    ChannelName = channel.Name,
+                    CreatedAt = createdAt,
+                    ExpiredAt = createdAt.AddHours(1),
+                });
             }
         }
 
@@ -137,7 +154,7 @@ namespace DisbotNext.DiscordClient
 
         private async Task Client_GuildMemberAdded(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.GuildMemberAddEventArgs e)
         {
-            var user = this._unitOfWork.MemberRepository.FindOrCreateAsync(e.Member.Id);
+            await this._unitOfWork.MemberRepository.FindOrCreateAsync(e.Member.Id);
             await this._unitOfWork.SaveChangesAsync();
         }
 
