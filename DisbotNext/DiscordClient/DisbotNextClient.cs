@@ -16,6 +16,7 @@ using DisbotNext.Infrastructures.Common.Models;
 using DisbotNext.Infrastructure.Common;
 using Hangfire;
 using System.Threading;
+using DisbotNext.Infrastructure.Common.Models;
 
 namespace DisbotNext.DiscordClient
 {
@@ -145,10 +146,17 @@ namespace DisbotNext.DiscordClient
             }
         }
 
-        private Task Commands_CommandErrored(CommandsNextExtension sender, CommandErrorEventArgs e)
+        private async Task Commands_CommandErrored(CommandsNextExtension sender, CommandErrorEventArgs e)
         {
-            Console.WriteLine(e.Exception);
-            return Task.CompletedTask;
+            var triggeredMember = await this._unitOfWork.MemberRepository.FindOrCreateAsync(e.Context.User.Id);
+            var log = new ErrorLog()
+            {
+                Method = e.Command.Name,
+                Log = e.Exception.ToString(),
+                CreatedAt = DateTime.Now,
+                TriggeredBy = triggeredMember,
+            };
+            await this._unitOfWork.ErrorLogRepository.InsertAsync(log);
         }
 
 
