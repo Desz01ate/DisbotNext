@@ -72,7 +72,7 @@ namespace DisbotNext.DiscordClient
                             await tempChannel.DeleteAsync("expired");
                         }
                     }
-                    finally
+                    catch
                     {
                         await this._unitOfWork.TempChannelRepository.DeleteAsync(channel);
                     }

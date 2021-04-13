@@ -51,7 +51,8 @@ namespace DisbotNext.Infrastructures.Sqlite
 
             modelBuilder.Entity<ErrorLog>(builder =>
             {
-                builder.HasNoKey();
+                builder.HasKey(x => x.Id);
+                builder.Property(x => x.Id).ValueGeneratedOnAdd();
                 builder.HasOne(x => x.TriggeredBy);
             });
         }
