@@ -15,6 +15,8 @@ namespace DisbotNext.Infrastructures.Sqlite
 
         public override DbSet<TempChannel> TempChannels { get; set; }
 
+        public override DbSet<ErrorLog> ErrorLogs { get; set; }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.UseLazyLoadingProxies().UseSqlite($@"Data Source={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Local.db")}");
@@ -45,6 +47,13 @@ namespace DisbotNext.Infrastructures.Sqlite
                 builder.Property(x => x.ChannelName);
                 builder.Property(x => x.CreatedAt);
                 builder.Property(x => x.ExpiredAt);
+            });
+
+            modelBuilder.Entity<ErrorLog>(builder =>
+            {
+                builder.HasKey(x => x.Id);
+                builder.Property(x => x.Id).ValueGeneratedOnAdd();
+                builder.HasOne(x => x.TriggeredBy);
             });
         }
     }

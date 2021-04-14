@@ -16,6 +16,7 @@ using DisbotNext.Infrastructures.Common.Models;
 using DisbotNext.Infrastructure.Common;
 using Hangfire;
 using System.Threading;
+using DisbotNext.Infrastructure.Common.Models;
 
 namespace DisbotNext.DiscordClient
 {
@@ -25,18 +26,15 @@ namespace DisbotNext.DiscordClient
 
         private readonly UnitOfWork _unitOfWork;
 
-        private readonly IBackgroundJobClient _backgroundJobClient;
         public override IReadOnlyList<DiscordChannel> Channels => base.Channels;
 
         public DisbotNextClient(IServiceProvider service,
-                                IBackgroundJobClient backgroundJobClient,
                                 UnitOfWork unitOfWork,
                                 DiscordConfigurations configuration) : base(configuration)
         {
             this.semaphore = new SemaphoreSlim(1, 1);
 
             this._unitOfWork = unitOfWork;
-            this._backgroundJobClient = backgroundJobClient;
             this.Client.MessageCreated += Client_MessageCreated;
             this.Client.MessageReactionAdded += Client_MessageReactionAdded;
             this.Client.MessageReactionRemoved += Client_MessageReactionRemoved;
@@ -71,8 +69,16 @@ namespace DisbotNext.DiscordClient
                             await tempChannel.DeleteAsync("expired");
                         }
                     }
-                    finally
+                    catch (Exception ex)
                     {
+                        var botIdentity = await this._unitOfWork.MemberRepository.FindOrCreateAsync(this.Client.CurrentUser.Id);
+                        await this._unitOfWork.ErrorLogRepository.InsertAsync(new ErrorLog
+                        {
+                            Method = "DeleteTempChannels",
+                            TriggeredBy = botIdentity,
+                            Log = ex.ToString(),
+                            CreatedAt = DateTime.Now
+                        });
                         await this._unitOfWork.TempChannelRepository.DeleteAsync(channel);
                     }
                 }
@@ -145,10 +151,17 @@ namespace DisbotNext.DiscordClient
             }
         }
 
-        private Task Commands_CommandErrored(CommandsNextExtension sender, CommandErrorEventArgs e)
+        private async Task Commands_CommandErrored(CommandsNextExtension sender, CommandErrorEventArgs e)
         {
-            Console.WriteLine(e.Exception);
-            return Task.CompletedTask;
+            var triggeredMember = await this._unitOfWork.MemberRepository.FindOrCreateAsync(e.Context.User.Id);
+            var log = new ErrorLog()
+            {
+                Method = e.Command.Name,
+                Log = e.Exception.ToString(),
+                CreatedAt = DateTime.Now,
+                TriggeredBy = triggeredMember,
+            };
+            await this._unitOfWork.ErrorLogRepository.InsertAsync(log);
         }
 
 

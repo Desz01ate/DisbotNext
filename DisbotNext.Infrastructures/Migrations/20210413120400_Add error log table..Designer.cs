@@ -3,14 +3,16 @@ using System;
 using DisbotNext.Infrastructures.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace DisbotNext.Infrastructures.Sqlite.Migrations
 {
     [DbContext(typeof(SqliteDbContext))]
-    partial class SqliteDbContextModelSnapshot : ModelSnapshot
+    [Migration("20210413120400_Add error log table.")]
+    partial class Adderrorlogtable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -18,10 +20,6 @@ namespace DisbotNext.Infrastructures.Sqlite.Migrations
 
             modelBuilder.Entity("DisbotNext.Infrastructure.Common.Models.ErrorLog", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
@@ -35,8 +33,6 @@ namespace DisbotNext.Infrastructures.Sqlite.Migrations
 
                     b.Property<ulong?>("TriggeredById")
                         .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
 
                     b.HasIndex("TriggeredById");
 

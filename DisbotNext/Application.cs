@@ -16,13 +16,9 @@ namespace DisbotNext
     {
         private readonly DisbotNextClient _client;
 
-        private readonly UnitOfWork _unitOfWork;
-
-        public Application(DisbotNextClient client,
-                           UnitOfWork unitOfWork)
+        public Application(DisbotNextClient client)
         {
             this._client = client;
-            this._unitOfWork = unitOfWork;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
