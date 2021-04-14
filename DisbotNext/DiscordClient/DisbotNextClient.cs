@@ -26,18 +26,15 @@ namespace DisbotNext.DiscordClient
 
         private readonly UnitOfWork _unitOfWork;
 
-        private readonly IBackgroundJobClient _backgroundJobClient;
         public override IReadOnlyList<DiscordChannel> Channels => base.Channels;
 
         public DisbotNextClient(IServiceProvider service,
-                                IBackgroundJobClient backgroundJobClient,
                                 UnitOfWork unitOfWork,
                                 DiscordConfigurations configuration) : base(configuration)
         {
             this.semaphore = new SemaphoreSlim(1, 1);
 
             this._unitOfWork = unitOfWork;
-            this._backgroundJobClient = backgroundJobClient;
             this.Client.MessageCreated += Client_MessageCreated;
             this.Client.MessageReactionAdded += Client_MessageReactionAdded;
             this.Client.MessageReactionRemoved += Client_MessageReactionRemoved;
@@ -72,8 +69,16 @@ namespace DisbotNext.DiscordClient
                             await tempChannel.DeleteAsync("expired");
                         }
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        var botIdentity = await this._unitOfWork.MemberRepository.FindOrCreateAsync(this.Client.CurrentUser.Id);
+                        await this._unitOfWork.ErrorLogRepository.InsertAsync(new ErrorLog
+                        {
+                            Method = "DeleteTempChannels",
+                            TriggeredBy = botIdentity,
+                            Log = ex.ToString(),
+                            CreatedAt = DateTime.Now
+                        });
                         await this._unitOfWork.TempChannelRepository.DeleteAsync(channel);
                     }
                 }
