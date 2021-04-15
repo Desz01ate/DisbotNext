@@ -47,18 +47,10 @@ namespace DisbotNext.DiscordClient.Commands
                 await ctx.RespondAsync($"ไม่พบประเทศ '{country}' ในระบบ");
                 return;
             }
-            var sb = new StringBuilder();
-            sb.AppendLine($"😷 จำนวนผู้ติดเชื้อที่พบวันนี้ {result.TodayCases:n0}");
-            sb.AppendLine($"😷 จำนวนผู้ติดเชื้อที่พบทั้งสิ้น {result.Cases:n0}");
-            sb.AppendLine($"💀 จำนวนผู้เสียชีวิตวันนี้ {result.TodayDeaths:n0}");
-            sb.AppendLine($"💀 จำนวนผู้เสียชีวิตทั้งสิ้น {result.Deaths:n0}");
-            sb.AppendLine($"🏨 จำนวนผู้ป่วยอาการวิกฤตทั้งสิ้น {result.Critical:n0}");
-            sb.AppendLine($"🏨 จำนวนผู้ป่วยที่กำลังรักษาตัว {result.Active:n0}");
-            sb.AppendLine($"👌 จำนวนผู้ป่วยที่รักษาหายแล้วทั้งสิ้น {result.Recovered:n0}");
             var embed = new DiscordEmbedBuilder()
             {
-                Title = $"สถานการณ์ของ {result.Country} ณ วันที่ {DateTime.Now.ToString("dd/MM/yyyy")}",
-                Description = sb.ToString(),
+                Title = $"สถานการณ์ Covid-19 ของ {result.Country} ณ วันที่ {DateTime.Now.ToString("dd/MM/yyyy")}",
+                Description = result.ToString(),
                 Color = new Optional<DiscordColor>(DiscordColor.Red),
             };
             await ctx.RespondAsync(embed);

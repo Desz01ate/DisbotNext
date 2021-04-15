@@ -17,30 +17,36 @@ using DisbotNext.Infrastructure.Common;
 using Hangfire;
 using System.Threading;
 using DisbotNext.Infrastructure.Common.Models;
+using DisbotNext.ExternalServices.CovidTracker;
+using DisbotNext.ExternalServices.OildPriceChecker;
 
 namespace DisbotNext.DiscordClient
 {
     public class DisbotNextClient : DiscordClientAbstract
     {
         private readonly SemaphoreSlim semaphore;
-
+        private readonly ICovidTracker covidTracker;
+        private readonly IOilPriceChecker oilPriceChecker;
         private readonly UnitOfWork _unitOfWork;
 
         public override IReadOnlyList<DiscordChannel> Channels => base.Channels;
 
         public DisbotNextClient(IServiceProvider service,
+                                ICovidTracker covidTracker,
+                                IOilPriceChecker oilPriceChecker,
                                 UnitOfWork unitOfWork,
                                 DiscordConfigurations configuration) : base(configuration)
         {
             this.semaphore = new SemaphoreSlim(1, 1);
-
+            this.covidTracker = covidTracker;
+            this.oilPriceChecker = oilPriceChecker;
             this._unitOfWork = unitOfWork;
             this.Client.MessageCreated += Client_MessageCreated;
             this.Client.MessageReactionAdded += Client_MessageReactionAdded;
             this.Client.MessageReactionRemoved += Client_MessageReactionRemoved;
             this.Client.GuildMemberAdded += Client_GuildMemberAdded;
             this.Client.PresenceUpdated += Client_PresenceUpdated;
-
+            this.Client.GuildDownloadCompleted += Client_GuildDownloadCompleted;
             var commands = this.Client.UseCommandsNext(new CommandsNextConfiguration
             {
                 StringPrefixes = new[] { configuration.CommandPrefix },
@@ -52,6 +58,36 @@ namespace DisbotNext.DiscordClient
             commands.CommandErrored += Commands_CommandErrored;
 
             RecurringJob.AddOrUpdate(() => DeleteTempChannels(), Cron.Minutely());
+            RecurringJob.AddOrUpdate(() => SendDailyReportAsync(), Cron.Daily());
+        }
+
+        private async Task Client_GuildDownloadCompleted(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.GuildDownloadCompletedEventArgs e)
+        {
+            await SendDailyReportAsync();
+            foreach (var channel in this.Channels.Where(x => x.Name == "bot-status" && x.Type == DSharpPlus.ChannelType.Text))
+            {
+                await channel.SendMessageAsync($"[{DateTime.Now}] ขณะนี้บอทพร้อมใช้งานแล้ว");
+            }
+        }
+
+        public async Task SendDailyReportAsync()
+        {
+            await this.semaphore.WaitAsync();
+            var channels = this.Channels.Where(x => x.Name == "daily-report" && x.Type == DSharpPlus.ChannelType.Text);
+            var covidReport = await this.covidTracker.GetCovidTrackerDataAsync("thailand");
+            var embed = new DiscordEmbedBuilder()
+            {
+                Title = $"สถานการณ์ Covid-19 ของ {covidReport.Country} ณ วันที่ {DateTime.Now.ToString("dd/MM/yyyy")}",
+                Description = covidReport.ToString(),
+                Color = new Optional<DiscordColor>(DiscordColor.Red)
+
+            }.Build();
+            foreach (var channel in channels)
+            {
+                await channel.SendMessageAsync(embed);
+            }
+
+            this.semaphore.Release();
         }
 
         public async Task DeleteTempChannels()
@@ -175,7 +211,7 @@ namespace DisbotNext.DiscordClient
         {
             var channel = e.Channel;
             var message = await channel.GetMessageAsync(e.Message.Id);
-            if (this.Channels.Contains(channel) && message.Author.Id != this.Client.CurrentUser.Id && message.Author.Id != e.User.Id)
+            if (this.Channels.Contains(channel) && !message.Author.IsBot && message.Author.Id != e.User.Id)
             {
                 var user = await this._unitOfWork.MemberRepository.FindOrCreateAsync(message.Author.Id);
                 user.ExpGained(-1);
@@ -187,7 +223,7 @@ namespace DisbotNext.DiscordClient
         {
             var channel = e.Channel;
             var message = await channel.GetMessageAsync(e.Message.Id);
-            if (this.Channels.Contains(channel) && message.Author.Id != this.Client.CurrentUser.Id && message.Author.Id != e.User.Id)
+            if (this.Channels.Contains(channel) && !message.Author.IsBot && message.Author.Id != e.User.Id)
             {
                 var user = await this._unitOfWork.MemberRepository.FindOrCreateAsync(message.Author.Id);
                 user.ExpGained(1);
@@ -199,7 +235,7 @@ namespace DisbotNext.DiscordClient
         private async System.Threading.Tasks.Task Client_MessageCreated(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.MessageCreateEventArgs e)
         {
             var channel = e.Channel;
-            if (this.Channels.Contains(channel) && e.Author.Id != this.Client.CurrentUser.Id)
+            if (this.Channels.Contains(channel) && !e.Author.IsBot)
             {
                 (bool isRude, float _) = ThaiSen.Predict(e.Message.Content);
                 if (isRude)
