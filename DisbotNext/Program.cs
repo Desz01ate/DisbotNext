@@ -5,7 +5,7 @@ using DisbotNext.ExternalServices.OildPriceChecker;
 using DisbotNext.Infrastructure.Common;
 using DisbotNext.Infrastructures.Sqlite;
 using Hangfire;
-using Hangfire.SQLite;
+using Hangfire.LiteDB;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
@@ -77,7 +77,7 @@ namespace DisbotNext
                     services.AddHangfire(config =>
                     {
                         config.UseColouredConsoleLogProvider();
-                        config.UseSQLiteStorage($"Data Source={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "cron.db")};Mode=ReadWriteCreate;Cache=Private", new SQLiteStorageOptions());
+                        config.UseLiteDbStorage();
                     });
                     services.AddHangfireServer();
                     services.AddSingleton<DisbotNextClient>();
