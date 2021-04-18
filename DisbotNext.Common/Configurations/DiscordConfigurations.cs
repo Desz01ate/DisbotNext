@@ -8,5 +8,6 @@ namespace DisbotNext.Common.Configurations
     {
         public string DiscordBotToken { get; set; }
         public string CommandPrefix { get; set; }
+        public string DailyReportCron { get; set; }
     }
 }

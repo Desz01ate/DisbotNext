@@ -26,20 +26,17 @@ namespace DisbotNext.DiscordClient
     {
         private readonly SemaphoreSlim semaphore;
         private readonly ICovidTracker covidTracker;
-        private readonly IOilPriceChecker oilPriceChecker;
         private readonly UnitOfWork _unitOfWork;
 
         public override IReadOnlyList<DiscordChannel> Channels => base.Channels;
 
         public DisbotNextClient(IServiceProvider service,
                                 ICovidTracker covidTracker,
-                                IOilPriceChecker oilPriceChecker,
                                 UnitOfWork unitOfWork,
                                 DiscordConfigurations configuration) : base(configuration)
         {
             this.semaphore = new SemaphoreSlim(1, 1);
             this.covidTracker = covidTracker;
-            this.oilPriceChecker = oilPriceChecker;
             this._unitOfWork = unitOfWork;
             this.Client.MessageCreated += Client_MessageCreated;
             this.Client.MessageReactionAdded += Client_MessageReactionAdded;
@@ -58,12 +55,11 @@ namespace DisbotNext.DiscordClient
             commands.CommandErrored += Commands_CommandErrored;
 
             RecurringJob.AddOrUpdate(() => DeleteTempChannels(), Cron.Minutely());
-            RecurringJob.AddOrUpdate(() => SendDailyReportAsync(), Cron.Daily());
+            RecurringJob.AddOrUpdate(() => SendDailyReportAsync(), configuration.DailyReportCron);
         }
 
         private async Task Client_GuildDownloadCompleted(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.GuildDownloadCompletedEventArgs e)
         {
-            await SendDailyReportAsync();
             foreach (var channel in this.Channels.Where(x => x.Name == "bot-status" && x.Type == DSharpPlus.ChannelType.Text))
             {
                 await channel.SendMessageAsync($"[{DateTime.Now}] ขณะนี้บอทพร้อมใช้งานแล้ว");

@@ -99,7 +99,8 @@ namespace DisbotNext
                 var defaultConfig = new DiscordConfigurations()
                 {
                     DiscordBotToken = "",
-                    CommandPrefix = "!"
+                    CommandPrefix = "!",
+                    DailyReportCron = Hangfire.Cron.Daily(),
                 };
                 File.WriteAllText(configPath, JsonConvert.SerializeObject(defaultConfig));
                 return defaultConfig;
