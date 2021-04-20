@@ -8,7 +8,7 @@ using System;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
-using DisbotNext.ExternalServices.OildPriceChecker;
+using DisbotNext.ExternalServices.OilPriceChecker;
 using System.Linq;
 using System.Collections.Generic;
 using DisbotNext.Common.Configurations;

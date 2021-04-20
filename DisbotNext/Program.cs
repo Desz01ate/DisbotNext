@@ -1,7 +1,7 @@
 ﻿using DisbotNext.Common.Configurations;
 using DisbotNext.DiscordClient;
 using DisbotNext.ExternalServices.CovidTracker;
-using DisbotNext.ExternalServices.OildPriceChecker;
+using DisbotNext.ExternalServices.OilPriceChecker;
 using DisbotNext.Infrastructure.Common;
 using DisbotNext.Infrastructures.Sqlite;
 using Hangfire;

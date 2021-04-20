@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DisbotNext.ExternalServices.OildPriceChecker
+namespace DisbotNext.ExternalServices.OilPriceChecker
 {
     public class OilRetail
     {

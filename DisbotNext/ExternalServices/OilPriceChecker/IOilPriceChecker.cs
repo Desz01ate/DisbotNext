@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace DisbotNext.ExternalServices.OildPriceChecker
+namespace DisbotNext.ExternalServices.OilPriceChecker
 {
     public interface IOilPriceChecker
     {
