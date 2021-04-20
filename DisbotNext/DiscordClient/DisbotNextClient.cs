@@ -18,7 +18,7 @@ using Hangfire;
 using System.Threading;
 using DisbotNext.Infrastructure.Common.Models;
 using DisbotNext.ExternalServices.CovidTracker;
-using DisbotNext.ExternalServices.OildPriceChecker;
+using DisbotNext.ExternalServices.OilPriceChecker;
 
 namespace DisbotNext.DiscordClient
 {
@@ -44,6 +44,7 @@ namespace DisbotNext.DiscordClient
             this.Client.GuildMemberAdded += Client_GuildMemberAdded;
             this.Client.PresenceUpdated += Client_PresenceUpdated;
             this.Client.GuildDownloadCompleted += Client_GuildDownloadCompleted;
+            this.Client.Heartbeated += Client_Heartbeated;
             var commands = this.Client.UseCommandsNext(new CommandsNextConfiguration
             {
                 StringPrefixes = new[] { configuration.CommandPrefix },
@@ -56,14 +57,6 @@ namespace DisbotNext.DiscordClient
 
             RecurringJob.AddOrUpdate(() => DeleteTempChannels(), Cron.Minutely());
             RecurringJob.AddOrUpdate(() => SendDailyReportAsync(), configuration.DailyReportCron);
-        }
-
-        private async Task Client_GuildDownloadCompleted(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.GuildDownloadCompletedEventArgs e)
-        {
-            foreach (var channel in this.Channels.Where(x => x.Name == "bot-status" && x.Type == DSharpPlus.ChannelType.Text))
-            {
-                await channel.SendMessageAsync($"[{DateTime.Now}] ขณะนี้บอทพร้อมใช้งานแล้ว");
-            }
         }
 
         public async Task SendDailyReportAsync()
@@ -119,9 +112,31 @@ namespace DisbotNext.DiscordClient
             this.semaphore.Release();
         }
 
+        private async Task Client_Heartbeated(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.HeartbeatEventArgs e)
+        {
+            var activeChannels = this._unitOfWork.TempChannelRepository.Count(x => x.ChannelName != "text" && x.ChannelName != "voice");
+            await sender.UpdateStatusAsync(new DiscordActivity
+            {
+                ActivityType = ActivityType.Watching,
+                Name = $"{activeChannels} games channels."
+            });
+        }
+
+        private async Task Client_GuildDownloadCompleted(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.GuildDownloadCompletedEventArgs e)
+        {
+            foreach (var channel in this.Channels.Where(x => x.Name == "bot-status" && x.Type == DSharpPlus.ChannelType.Text))
+            {
+                await channel.SendMessageAsync($"[{DateTime.Now}] ขณะนี้บอทพร้อมใช้งานแล้ว");
+            }
+        }
+
+
         private async Task Client_PresenceUpdated(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.PresenceUpdateEventArgs e)
         {
             var presence = e.PresenceAfter;
+            if (presence.User.IsBot)
+                return;
+
             var guild = presence.Guild;
             var channels = await guild.GetChannelsAsync();
             DiscordChannel? parentCategoryChannel, textChannel, voiceChannel;
