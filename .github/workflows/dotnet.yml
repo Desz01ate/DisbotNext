@@ -1,4 +1,4 @@
-name: Master Push CI/CD
+name: Master Merge CI
 
 on:
   push:

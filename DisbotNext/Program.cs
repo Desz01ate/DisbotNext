@@ -75,7 +75,7 @@ namespace DisbotNext
                     services.AddHttpClient();
                     services.AddDbContext<DisbotDbContext, SqliteDbContext>();
                     services.AddHangfire(config =>
-                   
+                    {
                         config.UseColouredConsoleLogProvider();
                         config.UseLiteDbStorage();
                     });
