@@ -17,6 +17,8 @@ namespace DisbotNext.Infrastructures.Sqlite
 
         public override DbSet<ErrorLog> ErrorLogs { get; set; }
 
+        public override DbSet<StockSubscription> StockSubscriptions { get; set; }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.UseLazyLoadingProxies().UseSqlite($@"Data Source={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Local.db")}");
@@ -54,6 +56,13 @@ namespace DisbotNext.Infrastructures.Sqlite
                 builder.HasKey(x => x.Id);
                 builder.Property(x => x.Id).ValueGeneratedOnAdd();
                 builder.HasOne(x => x.TriggeredBy);
+            });
+
+            modelBuilder.Entity<StockSubscription>(builder =>
+            {
+                builder.HasKey(x => x.Id);
+                builder.Property(x => x.Id).ValueGeneratedOnAdd();
+                builder.Property(x => x.Symbol).IsRequired();
             });
         }
     }

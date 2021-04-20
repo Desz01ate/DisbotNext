@@ -18,11 +18,21 @@ namespace DisbotNext.Common
 
         private readonly List<DiscordChannel> _channels;
 
+        private readonly List<DiscordGuild> _guilds;
+
+        private readonly List<DiscordMember> _members;
+
         public virtual IReadOnlyList<DiscordChannel> Channels => this._channels;
+
+        public virtual IReadOnlyList<DiscordGuild> Guilds => this._guilds;
+
+        public virtual IReadOnlyList<DiscordMember> Members => this._members;
 
         protected DiscordClientAbstract(DiscordConfigurations configuration)
         {
             _channels = new List<DiscordChannel>();
+            _guilds = new List<DiscordGuild>();
+            _members = new List<DiscordMember>();
             Client = new DiscordClient(new DiscordConfiguration()
             {
                 Token = configuration.DiscordBotToken,
@@ -78,27 +88,38 @@ namespace DisbotNext.Common
         protected virtual Task DiscordClient_GuildDeletedCompleted(DiscordClient sender, GuildDeleteEventArgs e)
         {
             var guild = e.Guild;
-            var channel = _channels.SingleOrDefault(x => x.GuildId == guild.Id);
             lock (_channels)
-                _channels.Remove(channel);
+                _channels.RemoveAll(x => x.GuildId == guild.Id);
+            lock (_members)
+                _members.RemoveAll(x => x.Guild.Id == guild.Id);
+            lock (_guilds)
+                _guilds.Remove(guild);
             return Task.CompletedTask;
         }
         protected virtual Task DiscordClient_GuildCreatedCompleted(DiscordClient sender, GuildCreateEventArgs e)
         {
             var guild = e.Guild;
             var channels = guild.Channels.Select(x => x.Value);
-            lock (channels)
+            lock (_channels)
                 this._channels.AddRange(channels);
+            lock (_members)
+                this._members.AddRange(guild.Members.Select(x => x.Value));
+            lock (_guilds)
+                this._guilds.Add(guild);
             return Task.CompletedTask;
         }
         protected virtual Task DiscordClient_GuildsDownloadCompleted(DiscordClient sender, GuildDownloadCompletedEventArgs e)
         {
-            var guilds = e.Guilds;
+            var guilds = e.Guilds.Select(x => x.Value);
             foreach (var guild in guilds)
             {
-                var channels = guild.Value.Channels.Select(x => x.Value);
+                var channels = guild.Channels.Select(x => x.Value);
                 lock (_channels)
                     this._channels.AddRange(channels);
+                lock (_members)
+                    this._members.AddRange(guild.Members.Select(x => x.Value));
+                lock (_guilds)
+                    this._guilds.Add(guild);
             }
             return Task.CompletedTask;
         }

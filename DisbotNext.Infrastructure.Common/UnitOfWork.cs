@@ -22,6 +22,7 @@ namespace DisbotNext.Infrastructure.Common
             this.ChatLogRepository = new ChatLogRepository(dbContext);
             this.TempChannelRepository = new TempChannelRepository(dbContext);
             this.ErrorLogRepository = new ErrorLogRepository(dbContext);
+            this.StockSubscriptions = new StockSubscriptionRepository(dbContext);
         }
 
         public IMemberRepository MemberRepository { get; }
@@ -31,6 +32,8 @@ namespace DisbotNext.Infrastructure.Common
         public ITempChannelRepository TempChannelRepository { get; }
 
         public IErrorLogRepository ErrorLogRepository { get; }
+
+        public IStockSubscriptionRepository StockSubscriptions { get; }
 
         public Task SaveChangesAsync(CancellationToken cancellationToken = default)
         {

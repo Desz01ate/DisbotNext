@@ -12,6 +12,8 @@ using DisbotNext.ExternalServices.OilPriceChecker;
 using System.Linq;
 using System.Collections.Generic;
 using DisbotNext.Common.Configurations;
+using DisbotNext.ExternalServices.Financial.Stock;
+using DisbotNext.Infrastructure.Common.Models;
 
 namespace DisbotNext.DiscordClient.Commands
 {
@@ -21,15 +23,18 @@ namespace DisbotNext.DiscordClient.Commands
         private readonly DiscordConfigurations configurations;
         private readonly ICovidTracker _covidTracker;
         private readonly IOilPriceChecker _oilPriceChecker;
+        private readonly IStockPriceChecker _stockPriceChecker;
         public CommandsHandler(UnitOfWork unitOfWork,
                                DiscordConfigurations configurations,
                                ICovidTracker covidTracker,
-                               IOilPriceChecker oilPriceChecker)
+                               IOilPriceChecker oilPriceChecker,
+                               IStockPriceChecker stockPriceChecker)
         {
             this._unitOfWork = unitOfWork;
             this.configurations = configurations;
             this._covidTracker = covidTracker;
             this._oilPriceChecker = oilPriceChecker;
+            this._stockPriceChecker = stockPriceChecker;
         }
 
         [Command("test")]
@@ -97,6 +102,66 @@ namespace DisbotNext.DiscordClient.Commands
             embed.Title = "ราคาน้ำมันวันพรุ่งนี้";
             embed.Description = string.Join("\n", list);
             await ctx.RespondAsync(embed.Build());
+        }
+
+        [Command("stock")]
+        public async Task GetStockPriceAsync(CommandContext ctx, string symbol)
+        {
+            var stock = await this._stockPriceChecker.GetStockPriceAsync(symbol.ToUpper());
+            if (stock == null)
+            {
+                await ctx.RespondAsync($"ไม่พบหุ้น '{symbol}'");
+                return;
+            }
+            var embedBuilder = new DiscordEmbedBuilder()
+            {
+                Color = new Optional<DiscordColor>(DiscordColor.White),
+                Title = $"Stock report for {stock.Symbol} at {DateTime.Now:dd/MM/yy hh:mm:ss}",
+                Description = $"Market Price : ${stock.RegularMarketPrice}\n" +
+                                  $"Market Open : ${stock.RegularMarketOpen}\n" +
+                                  $"Today Low : ${stock.RegularMarketDayLow}\n" +
+                                  $"Today High : ${stock.RegularMarketDayHigh}"
+            };
+            await ctx.RespondAsync(embedBuilder.Build());
+        }
+
+        [Command("stocksub")]
+        public async Task SubscribeStockPriceAsync(CommandContext ctx, string symbol)
+        {
+            var symbolNormalized = symbol.ToUpper();
+            var stock = await this._stockPriceChecker.GetStockPriceAsync(symbolNormalized);
+            if (stock == null)
+            {
+                await ctx.RespondAsync($"ไม่พบหุ้น '{symbol}'");
+                return;
+            }
+            await this._unitOfWork.StockSubscriptions.InsertAsync(new Infrastructure.Common.Models.StockSubscription
+            {
+                Symbol = symbolNormalized,
+                DiscordMemberId = ctx.Member.Id,
+                CreatedAt = DateTime.Now
+            });
+            await this._unitOfWork.SaveChangesAsync();
+            await ctx.RespondAsync($"ทำการลงทะเบียนแจ้งเตือนหุ้น '{symbolNormalized}' เรียบร้อยแล้ว");
+        }
+
+        [Command("stockunsub")]
+        public async Task UnsubscribeStockPriceAsync(CommandContext ctx, string symbol = "all")
+        {
+            var symbolNormalized = symbol.ToUpper();
+            Func<StockSubscription, bool> predicate;
+            switch (symbolNormalized)
+            {
+                case "ALL":
+                    predicate = x => x.DiscordMemberId == ctx.Member.Id;
+                    break;
+                default:
+                    predicate = x => x.DiscordMemberId == ctx.Member.Id && x.Symbol == symbolNormalized;
+                    break;
+            }
+            await this._unitOfWork.StockSubscriptions.DeleteAsync(predicate);
+            await this._unitOfWork.SaveChangesAsync();
+            await ctx.RespondAsync($"ทำการลบการแจ้งเตือนสำหรับ '{symbolNormalized}' แล้ว");
         }
 
         [Command("automove")]
