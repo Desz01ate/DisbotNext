@@ -31,6 +31,28 @@ namespace DisbotNext.Infrastructure.Common.Repository.Interface
         ValueTask DeleteAsync(T obj, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Delete objects which are satisfy the given predicate.
+        /// </summary>
+        /// <param name="predicate"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        ValueTask DeleteAsync(Func<T, bool> predicate, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Delete many objects from repository.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        ValueTask DeleteManyAsync(IEnumerable<T> source, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
         /// Insert an object to repository.
         /// </summary>
         /// <param name="obj"></param>

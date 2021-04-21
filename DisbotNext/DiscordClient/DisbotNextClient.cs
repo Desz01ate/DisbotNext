@@ -18,25 +18,28 @@ using Hangfire;
 using System.Threading;
 using DisbotNext.Infrastructure.Common.Models;
 using DisbotNext.ExternalServices.CovidTracker;
-using DisbotNext.ExternalServices.OilPriceChecker;
+using DisbotNext.ExternalServices.Financial.Stock;
 
 namespace DisbotNext.DiscordClient
 {
-    public class DisbotNextClient : DiscordClientAbstract
+    public partial class DisbotNextClient : DiscordClientAbstract
     {
         private readonly SemaphoreSlim semaphore;
         private readonly ICovidTracker covidTracker;
+        private readonly IStockPriceChecker stockPriceChecker;
         private readonly UnitOfWork _unitOfWork;
 
         public override IReadOnlyList<DiscordChannel> Channels => base.Channels;
 
         public DisbotNextClient(IServiceProvider service,
                                 ICovidTracker covidTracker,
+                                IStockPriceChecker stockPriceChecker,
                                 UnitOfWork unitOfWork,
                                 DiscordConfigurations configuration) : base(configuration)
         {
             this.semaphore = new SemaphoreSlim(1, 1);
             this.covidTracker = covidTracker;
+            this.stockPriceChecker = stockPriceChecker;
             this._unitOfWork = unitOfWork;
             this.Client.MessageCreated += Client_MessageCreated;
             this.Client.MessageReactionAdded += Client_MessageReactionAdded;
@@ -57,59 +60,7 @@ namespace DisbotNext.DiscordClient
 
             RecurringJob.AddOrUpdate(() => DeleteTempChannels(), Cron.Minutely());
             RecurringJob.AddOrUpdate(() => SendDailyReportAsync(), configuration.DailyReportCron);
-        }
-
-        public async Task SendDailyReportAsync()
-        {
-            await this.semaphore.WaitAsync();
-            var channels = this.Channels.Where(x => x.Name == "daily-report" && x.Type == DSharpPlus.ChannelType.Text);
-            var covidReport = await this.covidTracker.GetCovidTrackerDataAsync("thailand");
-            var embed = new DiscordEmbedBuilder()
-            {
-                Title = $"สถานการณ์ Covid-19 ของ {covidReport.Country} ณ วันที่ {DateTime.Now.ToString("dd/MM/yyyy")}",
-                Description = covidReport.ToString(),
-                Color = new Optional<DiscordColor>(DiscordColor.Red)
-
-            }.Build();
-            foreach (var channel in channels)
-            {
-                await channel.SendMessageAsync(embed);
-            }
-
-            this.semaphore.Release();
-        }
-
-        public async Task DeleteTempChannels()
-        {
-            await this.semaphore.WaitAsync();
-            foreach (var channel in this._unitOfWork.TempChannelRepository)
-            {
-                if (channel.ExpiredAt <= DateTime.Now)
-                {
-                    try
-                    {
-                        var tempChannel = await this.Client.GetChannelAsync(channel.Id);
-                        if ((tempChannel.Type == DSharpPlus.ChannelType.Voice && !tempChannel.Users.Any()) || tempChannel.Type != DSharpPlus.ChannelType.Voice)
-                        {
-                            await tempChannel.DeleteAsync("expired");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        var botIdentity = await this._unitOfWork.MemberRepository.FindOrCreateAsync(this.Client.CurrentUser.Id);
-                        await this._unitOfWork.ErrorLogRepository.InsertAsync(new ErrorLog
-                        {
-                            Method = "DeleteTempChannels",
-                            TriggeredBy = botIdentity,
-                            Log = ex.ToString(),
-                            CreatedAt = DateTime.Now
-                        });
-                        await this._unitOfWork.TempChannelRepository.DeleteAsync(channel);
-                    }
-                }
-            }
-            await this._unitOfWork.SaveChangesAsync();
-            this.semaphore.Release();
+            RecurringJob.AddOrUpdate(() => SendStockPriceAsync(), Cron.MinuteInterval(15));
         }
 
         private async Task Client_Heartbeated(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.HeartbeatEventArgs e)
@@ -129,7 +80,6 @@ namespace DisbotNext.DiscordClient
                 await channel.SendMessageAsync($"[{DateTime.Now}] ขณะนี้บอทพร้อมใช้งานแล้ว");
             }
         }
-
 
         private async Task Client_PresenceUpdated(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.PresenceUpdateEventArgs e)
         {
@@ -211,14 +161,13 @@ namespace DisbotNext.DiscordClient
             await this._unitOfWork.ErrorLogRepository.InsertAsync(log);
         }
 
-
         private async Task Client_GuildMemberAdded(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.GuildMemberAddEventArgs e)
         {
             await this._unitOfWork.MemberRepository.FindOrCreateAsync(e.Member.Id);
             await this._unitOfWork.SaveChangesAsync();
         }
 
-        private async System.Threading.Tasks.Task Client_MessageReactionRemoved(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.MessageReactionRemoveEventArgs e)
+        private async Task Client_MessageReactionRemoved(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.MessageReactionRemoveEventArgs e)
         {
             var channel = e.Channel;
             var message = await channel.GetMessageAsync(e.Message.Id);
@@ -230,7 +179,7 @@ namespace DisbotNext.DiscordClient
             }
         }
 
-        private async System.Threading.Tasks.Task Client_MessageReactionAdded(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.MessageReactionAddEventArgs e)
+        private async Task Client_MessageReactionAdded(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.MessageReactionAddEventArgs e)
         {
             var channel = e.Channel;
             var message = await channel.GetMessageAsync(e.Message.Id);
@@ -243,7 +192,7 @@ namespace DisbotNext.DiscordClient
             }
         }
 
-        private async System.Threading.Tasks.Task Client_MessageCreated(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.MessageCreateEventArgs e)
+        private async Task Client_MessageCreated(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.MessageCreateEventArgs e)
         {
             var channel = e.Channel;
             if (this.Channels.Contains(channel) && !e.Author.IsBot)

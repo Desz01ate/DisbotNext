@@ -18,5 +18,6 @@ namespace DisbotNext.Infrastructure.Common
         public abstract DbSet<ChatLog> ChatLogs { get; set; }
         public abstract DbSet<TempChannel> TempChannels { get; set; }
         public abstract DbSet<ErrorLog> ErrorLogs { get; set; }
+        public abstract DbSet<StockSubscription> StockSubscriptions { get; set; }
     }
 }
