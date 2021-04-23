@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using DisbotNext.Infrastructure.Common;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using System.Threading.Tasks;
 
 namespace DisbotNext
@@ -8,7 +10,9 @@ namespace DisbotNext
         static async Task Main(string[] args)
         {
             Bootstrap.PrintGraffiti();
-            await Bootstrap.CreateHostBuilder(args).Build().RunAsync();
+            var host = Bootstrap.CreateHostBuilder(args).Build();
+            Bootstrap.ApplyMigrations(host);
+            await host.RunAsync();
         }
     }
 }

@@ -1,17 +1,25 @@
 # Dockerfile
 
 FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
-WORKDIR /app
+COPY . /src
 
-COPY *.csproj ./
-RUN dotnet restore
+WORKDIR /src
+RUN dotnet restore DisbotNext.sln
+
+WORKDIR /src/DisbotNext.Infrastructures
+RUN dotnet clean
+RUN dotnet build DisbotNext.Infrastructures.Sqlite.csproj -c Release
+
+WORKDIR /src/DisbotNext
+RUN dotnet clean
+RUN dotnet build DisbotNext.csproj -c Release
 
 COPY . .
-RUN dotnet publish -c Release -o out
+RUN dotnet publish -c Release -o /src/out
 
 
-FROM mcr.microsoft.com/dotnet/runtime:5.0
-WORKDIR /app
-COPY --from=build /app/out .
+FROM mcr.microsoft.com/dotnet/aspnet:5.0 AS runtime
+WORKDIR /src
+COPY --from=build /src/out .
 
-ENTRYPOINT [ "dotnet", "DisbotNext.dll" ]
+ENTRYPOINT ["dotnet", "DisbotNext.dll"]

@@ -5,8 +5,11 @@ using DisbotNext.ExternalServices.Financial.Stock;
 using DisbotNext.ExternalServices.OilPriceChecker;
 using DisbotNext.Infrastructure.Common;
 using DisbotNext.Infrastructures.Sqlite;
+using DisbotNext.Infrastructures.Sqlite.HealthChecks;
 using Hangfire;
 using Hangfire.LiteDB;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
@@ -68,6 +71,7 @@ namespace DisbotNext
                 {
                     services.AddHttpClient();
                     services.AddDbContext<DisbotDbContext, SqliteDbContext>();
+                    services.AddHealthChecks().AddCheck<DbPendingMigrationHealthCheck<SqliteDbContext>>("db-migration-check");
                     services.AddHangfire(config =>
                     {
                         config.UseColouredConsoleLogProvider();
@@ -88,19 +92,30 @@ namespace DisbotNext
 
         private static DiscordConfigurations GetConfiguration()
         {
-            var configPath = Path.Combine(Directory.GetCurrentDirectory(), "config.json");
-            if (!File.Exists(configPath))
+            var commandPrefix = Environment.GetEnvironmentVariable("COMMAND_PREFIX") ?? "!";
+            var discordBotToken = Environment.GetEnvironmentVariable("DISCORD_BOT_TOKEN") ?? throw new Exception("No environment variable 'DISCORD_BOT_TOKEN' found.");
+            var cron = Environment.GetEnvironmentVariable("DAILY_REPORT_CRON") ?? Cron.Daily();
+            return new DiscordConfigurations()
             {
-                var defaultConfig = new DiscordConfigurations()
-                {
-                    DiscordBotToken = "",
-                    CommandPrefix = "!",
-                    DailyReportCron = Hangfire.Cron.Daily(),
-                };
-                File.WriteAllText(configPath, JsonConvert.SerializeObject(defaultConfig));
-                return defaultConfig;
+                CommandPrefix = commandPrefix,
+                DiscordBotToken = discordBotToken,
+                DailyReportCron = cron,
+            };
+        }
+
+        public static void ApplyMigrations(IHost host)
+        {
+            using var scope = host.Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<DisbotDbContext>();
+            ApplyMigrations(dbContext);
+        }
+
+        public static void ApplyMigrations(DisbotDbContext dbContext)
+        {
+            if (dbContext.Database.GetPendingMigrations().Any())
+            {
+                dbContext.Database.Migrate();
             }
-            return JsonConvert.DeserializeObject<DiscordConfigurations>(File.ReadAllText(configPath));
         }
     }
 }

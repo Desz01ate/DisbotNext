@@ -4,6 +4,7 @@ using System;
 using System.IO;
 using DisbotNext.Infrastructure.Common;
 using DisbotNext.Infrastructure.Common.Models;
+using System.Linq;
 
 namespace DisbotNext.Infrastructures.Sqlite
 {
