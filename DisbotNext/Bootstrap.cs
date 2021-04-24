@@ -100,10 +100,7 @@ namespace DisbotNext
         {
             try
             {
-                if (dbContext.Database.GetPendingMigrations().Any())
-                {
-                    dbContext.Database.Migrate();
-                }
+                dbContext.Database.Migrate();
                 return true;
             }
             catch (Exception ex)
