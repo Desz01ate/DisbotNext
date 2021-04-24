@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DisbotNext.Infrastructure.Common.Models
+namespace DisbotNext.Infrastructures.Common.Models
 {
     public class ErrorLog
     {

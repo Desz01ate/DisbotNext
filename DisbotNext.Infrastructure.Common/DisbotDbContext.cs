@@ -1,4 +1,4 @@
-﻿using DisbotNext.Infrastructure.Common.Models;
+﻿using DisbotNext.Infrastructures.Common.Models;
 using DisbotNext.Infrastructures.Common.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DisbotNext.Infrastructure.Common
+namespace DisbotNext.Infrastructures.Common
 {
     /// <summary>
     /// Abstract database context for Disbot.

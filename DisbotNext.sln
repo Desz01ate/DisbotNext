@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DisbotNext.Common", "Disbot
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DisbotNext.Infrastructures.Sqlite", "DisbotNext.Infrastructures\DisbotNext.Infrastructures.Sqlite.csproj", "{22671EC9-406E-4692-AF67-323D0E23DAB1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DisbotNext.Infrastructure.Common", "DisbotNext.Infrastructure.Common\DisbotNext.Infrastructure.Common.csproj", "{E71879CD-A1B1-4297-9BD4-1E54C52FCDD9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DisbotNext.Infrastructures.Common", "DisbotNext.Infrastructure.Common\DisbotNext.Infrastructures.Common.csproj", "{E71879CD-A1B1-4297-9BD4-1E54C52FCDD9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace DisbotNext.Infrastructure.Common.Repository.Interface
+namespace DisbotNext.Infrastructures.Common.Repository.Interface
 {
     public interface IGenericRepository<T> : IEnumerable<T>
     {

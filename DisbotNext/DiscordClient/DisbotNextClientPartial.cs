@@ -1,4 +1,4 @@
-﻿using DisbotNext.Infrastructure.Common.Models;
+﻿using DisbotNext.Infrastructures.Common.Models;
 using DSharpPlus.Entities;
 using System;
 using System.Linq;

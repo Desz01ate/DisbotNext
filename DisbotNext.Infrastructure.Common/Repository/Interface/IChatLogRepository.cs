@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DisbotNext.Infrastructure.Common.Repository.Interface
+namespace DisbotNext.Infrastructures.Common.Repository.Interface
 {
     public interface IChatLogRepository : IGenericRepository<ChatLog>
     {

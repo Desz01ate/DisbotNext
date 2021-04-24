@@ -2,7 +2,6 @@
 using DisbotNext.Common.Configurations;
 using DisbotNext.DiscordClient.Commands;
 using DSharpPlus.Entities;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using DisbotNext.Common.Extensions;
@@ -13,12 +12,11 @@ using System.IO;
 using System;
 using DSharpPlus.CommandsNext;
 using DisbotNext.Infrastructures.Common.Models;
-using DisbotNext.Infrastructure.Common;
 using Hangfire;
 using System.Threading;
-using DisbotNext.Infrastructure.Common.Models;
 using DisbotNext.ExternalServices.CovidTracker;
 using DisbotNext.ExternalServices.Financial.Stock;
+using DisbotNext.Infrastructures.Common;
 
 namespace DisbotNext.DiscordClient
 {
@@ -136,7 +134,7 @@ namespace DisbotNext.DiscordClient
 
             async Task QueueDeleteTempChannelAsync(DiscordChannel channel, DateTime createdAt)
             {
-                await this._unitOfWork.TempChannelRepository.InsertAsync(new Infrastructure.Common.Models.TempChannel
+                await this._unitOfWork.TempChannelRepository.InsertAsync(new TempChannel
                 {
                     Id = channel.Id,
                     ChannelName = channel.Name,

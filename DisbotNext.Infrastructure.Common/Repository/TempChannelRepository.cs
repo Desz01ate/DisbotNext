@@ -1,5 +1,5 @@
-﻿using DisbotNext.Infrastructure.Common.Models;
-using DisbotNext.Infrastructure.Common.Repository.Interface;
+﻿using DisbotNext.Infrastructures.Common.Models;
+using DisbotNext.Infrastructures.Common.Repository.Interface;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace DisbotNext.Infrastructure.Common.Repository
+namespace DisbotNext.Infrastructures.Common.Repository
 {
     public class TempChannelRepository : ITempChannelRepository
     {

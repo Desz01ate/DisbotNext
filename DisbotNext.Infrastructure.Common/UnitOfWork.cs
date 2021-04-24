@@ -1,5 +1,5 @@
-﻿using DisbotNext.Infrastructure.Common.Repository;
-using DisbotNext.Infrastructure.Common.Repository.Interface;
+﻿using DisbotNext.Infrastructures.Common.Repository;
+using DisbotNext.Infrastructures.Common.Repository.Interface;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace DisbotNext.Infrastructure.Common
+namespace DisbotNext.Infrastructures.Common
 {
     public class UnitOfWork : IDisposable
     {

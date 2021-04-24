@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using DisbotNext.Infrastructure.Common;
+﻿using DisbotNext.Infrastructures.Common;
 using DisbotNext.Infrastructures.Sqlite;
 using Microsoft.EntityFrameworkCore;
 namespace Microsoft.Extensions.DependencyInjection
