@@ -53,8 +53,8 @@ namespace DisbotNext.DiscordClient
                             Log = ex.ToString(),
                             CreatedAt = DateTime.Now
                         });
-                        await this._unitOfWork.TempChannelRepository.DeleteAsync(channel);
                     }
+                    await this._unitOfWork.TempChannelRepository.DeleteAsync(channel);
                 }
             }
             await this._unitOfWork.SaveChangesAsync();

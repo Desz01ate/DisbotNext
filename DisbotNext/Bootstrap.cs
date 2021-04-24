@@ -96,7 +96,7 @@ namespace DisbotNext
             TryApplyMigrations(dbContext);
         }
 
-        public static bool TryApplyMigrations(DisbotDbContext dbContext)
+        public static bool TryApplyMigrations(DbContext dbContext)
         {
             try
             {
