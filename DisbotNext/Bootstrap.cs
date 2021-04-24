@@ -93,14 +93,26 @@ namespace DisbotNext
         {
             using var scope = host.Services.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<DisbotDbContext>();
-            ApplyMigrations(dbContext);
+            TryApplyMigrations(dbContext);
         }
 
-        public static void ApplyMigrations(DisbotDbContext dbContext)
+        public static bool TryApplyMigrations(DisbotDbContext dbContext)
         {
-            if (dbContext.Database.GetPendingMigrations().Any())
+            try
             {
-                dbContext.Database.Migrate();
+                if (dbContext.Database.GetPendingMigrations().Any())
+                {
+                    dbContext.Database.Migrate();
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                var lastColor = Console.ForegroundColor;
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(ex.ToString());
+                Console.ForegroundColor = lastColor;
+                return false;
             }
         }
     }
