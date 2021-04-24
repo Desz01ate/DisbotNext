@@ -2,7 +2,7 @@ name: Master Merge CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, nightly-build ]
 
 jobs:
   build:
