@@ -1,9 +1,6 @@
 ﻿using DisbotNext.Infrastructures.Common.Models;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.IO;
-using DisbotNext.Infrastructure.Common;
-using DisbotNext.Infrastructure.Common.Models;
+using DisbotNext.Infrastructures.Common;
 
 namespace DisbotNext.Infrastructures.Sqlite
 {
@@ -19,10 +16,8 @@ namespace DisbotNext.Infrastructures.Sqlite
 
         public override DbSet<StockSubscription> StockSubscriptions { get; set; }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            optionsBuilder.UseLazyLoadingProxies().UseSqlite($@"Data Source={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Local.db")}");
-            base.OnConfiguring(optionsBuilder);
+        public SqliteDbContext(DbContextOptions<SqliteDbContext> options) : base(options)
+        { 
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

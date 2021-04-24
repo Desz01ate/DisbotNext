@@ -20,7 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DisbotNext.Common\DisbotNext.Common.csproj" />
-    <ProjectReference Include="..\DisbotNext.Infrastructure.Common\DisbotNext.Infrastructure.Common.csproj" />
+    <ProjectReference Include="..\DisbotNext.Infrastructure.Common\DisbotNext.Infrastructures.Common.csproj" />
     <ProjectReference Include="..\DisbotNext.Infrastructures\DisbotNext.Infrastructures.Sqlite.csproj" />
   </ItemGroup>
 

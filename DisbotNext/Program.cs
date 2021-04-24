@@ -8,7 +8,9 @@ namespace DisbotNext
         static async Task Main(string[] args)
         {
             Bootstrap.PrintGraffiti();
-            await Bootstrap.CreateHostBuilder(args).Build().RunAsync();
+            var host = Bootstrap.CreateHostBuilder(args).Build();
+            Bootstrap.ApplyMigrations(host);
+            await host.RunAsync();
         }
     }
 }

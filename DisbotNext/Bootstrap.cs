@@ -3,13 +3,12 @@ using DisbotNext.DiscordClient;
 using DisbotNext.ExternalServices.CovidTracker;
 using DisbotNext.ExternalServices.Financial.Stock;
 using DisbotNext.ExternalServices.OilPriceChecker;
-using DisbotNext.Infrastructure.Common;
-using DisbotNext.Infrastructures.Sqlite;
+using DisbotNext.Infrastructures.Common;
 using Hangfire;
 using Hangfire.LiteDB;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Newtonsoft.Json;
 using System;
 using System.IO;
 using System.Linq;
@@ -66,8 +65,12 @@ namespace DisbotNext
             var host = new HostBuilder()
                 .ConfigureServices(services =>
                 {
+
                     services.AddHttpClient();
-                    services.AddDbContext<DisbotDbContext, SqliteDbContext>();
+
+                    var connectionString = Environment.GetEnvironmentVariable("DISBOT_CONNECTION_STRING") ?? $@"Data Source={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Local.db")}";
+                    services.AddSqliteDbContext(connectionString);
+
                     services.AddHangfire(config =>
                     {
                         config.UseColouredConsoleLogProvider();
@@ -75,32 +78,30 @@ namespace DisbotNext
                     });
                     services.AddHangfireServer();
                     services.AddSingleton<DisbotNextClient>();
+                    services.AddScoped(_ => DiscordConfigurations.GetConfiguration());
                     services.AddScoped<UnitOfWork>();
                     services.AddTransient<ICovidTracker, CovidTracker>();
                     services.AddTransient<IOilPriceChecker, OilPriceWebScraping>();
                     services.AddTransient<IStockPriceChecker, StockPriceChecker>();
-                    services.AddTransient(_ => GetConfiguration());
                     services.AddHostedService<Application>();
                 })
                 .UseConsoleLifetime();
             return host;
         }
 
-        private static DiscordConfigurations GetConfiguration()
+        public static void ApplyMigrations(IHost host)
         {
-            var configPath = Path.Combine(Directory.GetCurrentDirectory(), "config.json");
-            if (!File.Exists(configPath))
+            using var scope = host.Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<DisbotDbContext>();
+            ApplyMigrations(dbContext);
+        }
+
+        public static void ApplyMigrations(DisbotDbContext dbContext)
+        {
+            if (dbContext.Database.GetPendingMigrations().Any())
             {
-                var defaultConfig = new DiscordConfigurations()
-                {
-                    DiscordBotToken = "",
-                    CommandPrefix = "!",
-                    DailyReportCron = Hangfire.Cron.Daily(),
-                };
-                File.WriteAllText(configPath, JsonConvert.SerializeObject(defaultConfig));
-                return defaultConfig;
+                dbContext.Database.Migrate();
             }
-            return JsonConvert.DeserializeObject<DiscordConfigurations>(File.ReadAllText(configPath));
         }
     }
 }

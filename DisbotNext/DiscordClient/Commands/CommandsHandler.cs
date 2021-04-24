@@ -1,11 +1,9 @@
 ﻿using DisbotNext.ExternalServices.CovidTracker;
-using DisbotNext.Infrastructure.Common;
 using DisbotNext.Common.Extensions;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using System;
-using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using DisbotNext.ExternalServices.OilPriceChecker;
@@ -13,7 +11,8 @@ using System.Linq;
 using System.Collections.Generic;
 using DisbotNext.Common.Configurations;
 using DisbotNext.ExternalServices.Financial.Stock;
-using DisbotNext.Infrastructure.Common.Models;
+using DisbotNext.Infrastructures.Common;
+using DisbotNext.Infrastructures.Common.Models;
 
 namespace DisbotNext.DiscordClient.Commands
 {
@@ -135,7 +134,7 @@ namespace DisbotNext.DiscordClient.Commands
                 await ctx.RespondAsync($"ไม่พบหุ้น '{symbol}'");
                 return;
             }
-            await this._unitOfWork.StockSubscriptions.InsertAsync(new Infrastructure.Common.Models.StockSubscription
+            await this._unitOfWork.StockSubscriptions.InsertAsync(new StockSubscription
             {
                 Symbol = symbolNormalized,
                 DiscordMemberId = ctx.Member.Id,

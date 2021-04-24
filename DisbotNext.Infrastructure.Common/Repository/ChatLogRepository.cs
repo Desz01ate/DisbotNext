@@ -1,4 +1,4 @@
-﻿using DisbotNext.Infrastructure.Common.Repository.Interface;
+﻿using DisbotNext.Infrastructures.Common.Repository.Interface;
 using DisbotNext.Infrastructures.Common.Models;
 using System;
 using System.Collections.Generic;
@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace DisbotNext.Infrastructure.Common.Repository
+namespace DisbotNext.Infrastructures.Common.Repository
 {
     class ChatLogRepository : IChatLogRepository
     {

@@ -11,10 +11,11 @@
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="5.0.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="5.0.4" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions" Version="5.0.5" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DisbotNext.Infrastructure.Common\DisbotNext.Infrastructure.Common.csproj" />
+    <ProjectReference Include="..\DisbotNext.Infrastructure.Common\DisbotNext.Infrastructures.Common.csproj" />
   </ItemGroup>
 
 </Project>
