@@ -49,7 +49,7 @@ namespace DisbotNext.DiscordClient
                             var text = channelGroup.Single(x => x.ChannelType == Infrastructures.Common.Enum.ChannelType.Text);
                             var voice = channelGroup.Single(x => x.ChannelType == Infrastructures.Common.Enum.ChannelType.Voice);
 
-                            var parentChannel = this.Client.GetChannelAsync(parent.Id);
+                            var parentChannel = await this.Client.GetChannelAsync(parent.Id);
                             var textChannel = await this.Client.GetChannelAsync(text.Id);
                             var voiceChannel = await this.Client.GetChannelAsync(voice.Id);
 
@@ -58,7 +58,6 @@ namespace DisbotNext.DiscordClient
                             // and will remove from tracking temporary channels.
                             if ((await textChannel.GetMessagesAsync(1)).Count > 0)
                             {
-                                await textChannel.SendMessageAsync($"กลุ่มพูดคุยเกี่ยวกับ {parent.ChannelName} จะไม่ถูกลบอีกต่อไปเนื่องจากมีการพูดคุยเกิดขึ้นที่นี่ แต่ยังสามารถลบเองได้ด้วยมือได้เสมอเมื่อต้องการ!");
                                 await this._unitOfWork.TempChannelRepository.DeleteAsync(text);
                                 await this._unitOfWork.TempChannelRepository.DeleteAsync(voice);
                                 await this._unitOfWork.TempChannelRepository.DeleteAsync(parent);
@@ -66,7 +65,7 @@ namespace DisbotNext.DiscordClient
                             }
 
                             // if no message in text but user(s) still in voice chat
-                            // they might currently using the channel for some necessary battle-wise
+                            // they might currently using the channel for some necessary battle-heating chat
                             // so give them some more time!
                             if (!voiceChannel.Users.Any())
                             {
@@ -75,7 +74,7 @@ namespace DisbotNext.DiscordClient
                                 await this._unitOfWork.TempChannelRepository.DeleteAsync(voice);
                                 await voiceChannel.DeleteAsync("expired");
                                 await this._unitOfWork.TempChannelRepository.DeleteAsync(parent);
-                                await (await parentChannel).DeleteAsync("expired");
+                                await parentChannel.DeleteAsync("expired");
                             }
                         }
 
@@ -83,9 +82,10 @@ namespace DisbotNext.DiscordClient
                         {
                             switch (ex)
                             {
-                                case NotFoundException _:
+                                case NotFoundException nfEx:
+                                    await this._unitOfWork.TempChannelRepository.DeleteManyAsync(channelGroup.Select(x => x));
+                                    break;
                                 case BadRequestException _:
-
                                     //continue due to this is related to discord and unable to handle on our side.
                                     break;
                                 default:

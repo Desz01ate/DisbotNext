@@ -45,6 +45,7 @@ namespace DisbotNext.DiscordClient
             this.Client.PresenceUpdated += Client_PresenceUpdated;
             this.Client.GuildDownloadCompleted += Client_GuildDownloadCompleted;
             this.Client.Heartbeated += Client_Heartbeated;
+            this.Client.ChannelDeleted += Client_ChannelDeleted;
             var commands = this.Client.UseCommandsNext(new CommandsNextConfiguration
             {
                 StringPrefixes = new[] { configuration.CommandPrefix },
@@ -58,6 +59,13 @@ namespace DisbotNext.DiscordClient
             RecurringJob.AddOrUpdate(() => DeleteTempChannels(), Cron.Minutely());
             RecurringJob.AddOrUpdate(() => SendDailyReportAsync(), configuration.DailyReportCron);
             RecurringJob.AddOrUpdate(() => SendStockPriceAsync(), Cron.MinuteInterval(15));
+        }
+
+        private async Task Client_ChannelDeleted(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.ChannelDeleteEventArgs e)
+        {
+            var deletedChannel = e.Channel;
+            await this._unitOfWork.TempChannelRepository.DeleteAsync(x => x.Id == deletedChannel.Id);
+            await this._unitOfWork.SaveChangesAsync();
         }
 
         private async Task Client_Heartbeated(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.HeartbeatEventArgs e)
