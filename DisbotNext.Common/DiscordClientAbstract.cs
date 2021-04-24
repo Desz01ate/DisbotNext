@@ -44,8 +44,27 @@ namespace DisbotNext.Common
             Client.GuildCreated += DiscordClient_GuildCreatedCompleted;
             Client.GuildDeleted += DiscordClient_GuildDeletedCompleted;
             Client.ChannelCreated += DiscordClient_ChannelCreated;
-            Client.ChannelUpdated += DiscordClient_ChannelUpdated;
             Client.ChannelDeleted += DiscordClient_ChannelDeleted;
+            Client.GuildMemberAdded += Client_GuildMemberAdded;
+            Client.GuildMemberRemoved += Client_GuildMemberRemoved;
+        }
+
+        private Task Client_GuildMemberRemoved(DiscordClient sender, GuildMemberRemoveEventArgs e)
+        {
+            lock (_members)
+            {
+                _members.Remove(e.Member);
+            }
+            return Task.CompletedTask;
+        }
+
+        private Task Client_GuildMemberAdded(DiscordClient sender, GuildMemberAddEventArgs e)
+        {
+            lock (_members)
+            {
+                _members.Add(e.Member);
+            }
+            return Task.CompletedTask;
         }
 
         public Task ConnectAsync(CancellationToken cancellation = default)
@@ -65,16 +84,6 @@ namespace DisbotNext.Common
             return Task.CompletedTask;
         }
 
-        protected virtual Task DiscordClient_ChannelUpdated(DiscordClient sender, ChannelUpdateEventArgs e)
-        {
-            var channel = e.ChannelAfter;
-            if (channel.Type == ChannelType.Text && !_channels.Any(x => x.Id == channel.Id))
-            {
-                lock (_channels)
-                    _channels.Add(channel);
-            }
-            return Task.CompletedTask;
-        }
         protected virtual Task DiscordClient_ChannelCreated(DiscordClient sender, ChannelCreateEventArgs e)
         {
             var channel = e.Channel;

@@ -1,9 +1,7 @@
 ﻿using DisbotNext.Infrastructure.Common.Models;
 using DSharpPlus.Entities;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace DisbotNext.DiscordClient
@@ -84,7 +82,7 @@ namespace DisbotNext.DiscordClient
                 };
                 foreach (var discordMemberId in group.Select(x => x.DiscordMemberId))
                 {
-                    var member = this.Members.SingleOrDefault(x => x.Id == discordMemberId);
+                    var member = this.Members.FirstOrDefault(x => x.Id == discordMemberId);
                     if (member != null)
                     {
                         await member.SendMessageAsync(embedBuilder.Build());

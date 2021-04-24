@@ -5,14 +5,11 @@ using DisbotNext.ExternalServices.Financial.Stock;
 using DisbotNext.ExternalServices.OilPriceChecker;
 using DisbotNext.Infrastructure.Common;
 using DisbotNext.Infrastructures.Sqlite;
-using DisbotNext.Infrastructures.Sqlite.HealthChecks;
 using Hangfire;
 using Hangfire.LiteDB;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Newtonsoft.Json;
 using System;
 using System.IO;
 using System.Linq;
@@ -69,9 +66,12 @@ namespace DisbotNext
             var host = new HostBuilder()
                 .ConfigureServices(services =>
                 {
+
                     services.AddHttpClient();
-                    services.AddDbContext<DisbotDbContext, SqliteDbContext>();
-                    services.AddHealthChecks().AddCheck<DbPendingMigrationHealthCheck<SqliteDbContext>>("db-migration-check");
+
+                    var connectionString = Environment.GetEnvironmentVariable("DISBOT_CONNECTION_STRING") ?? $@"Data Source={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Local.db")}";
+                    services.AddSqliteDbContext(connectionString);
+
                     services.AddHangfire(config =>
                     {
                         config.UseColouredConsoleLogProvider();
@@ -79,28 +79,15 @@ namespace DisbotNext
                     });
                     services.AddHangfireServer();
                     services.AddSingleton<DisbotNextClient>();
+                    services.AddScoped(_ => DiscordConfigurations.GetConfiguration());
                     services.AddScoped<UnitOfWork>();
                     services.AddTransient<ICovidTracker, CovidTracker>();
                     services.AddTransient<IOilPriceChecker, OilPriceWebScraping>();
                     services.AddTransient<IStockPriceChecker, StockPriceChecker>();
-                    services.AddTransient(_ => GetConfiguration());
                     services.AddHostedService<Application>();
                 })
                 .UseConsoleLifetime();
             return host;
-        }
-
-        private static DiscordConfigurations GetConfiguration()
-        {
-            var commandPrefix = Environment.GetEnvironmentVariable("COMMAND_PREFIX") ?? "!";
-            var discordBotToken = Environment.GetEnvironmentVariable("DISCORD_BOT_TOKEN") ?? throw new Exception("No environment variable 'DISCORD_BOT_TOKEN' found.");
-            var cron = Environment.GetEnvironmentVariable("DAILY_REPORT_CRON") ?? Cron.Daily();
-            return new DiscordConfigurations()
-            {
-                CommandPrefix = commandPrefix,
-                DiscordBotToken = discordBotToken,
-                DailyReportCron = cron,
-            };
         }
 
         public static void ApplyMigrations(IHost host)

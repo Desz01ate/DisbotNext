@@ -29,8 +29,6 @@ namespace DisbotNext.DiscordClient
         private readonly IStockPriceChecker stockPriceChecker;
         private readonly UnitOfWork _unitOfWork;
 
-        public override IReadOnlyList<DiscordChannel> Channels => base.Channels;
-
         public DisbotNextClient(IServiceProvider service,
                                 ICovidTracker covidTracker,
                                 IStockPriceChecker stockPriceChecker,
