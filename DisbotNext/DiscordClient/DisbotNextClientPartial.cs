@@ -1,5 +1,6 @@
 ﻿using DisbotNext.Infrastructures.Common.Models;
 using DSharpPlus.Entities;
+using DSharpPlus.Exceptions;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,85 +12,139 @@ namespace DisbotNext.DiscordClient
         public async Task SendDailyReportAsync()
         {
             await this.semaphore.WaitAsync();
-            var channels = this.Channels.Where(x => x.Name == "daily-report" && x.Type == DSharpPlus.ChannelType.Text);
-            var covidReport = await this.covidTracker.GetCovidTrackerDataAsync("thailand");
-            var embed = new DiscordEmbedBuilder()
+            try
             {
-                Title = $"สถานการณ์ Covid-19 ของ {covidReport.Country} ณ วันที่ {DateTime.Now.ToString("dd/MM/yyyy")}",
-                Description = covidReport.ToString(),
-                Color = new Optional<DiscordColor>(DiscordColor.Red)
+                var channels = this.Channels.Where(x => x.Name == "daily-report" && x.Type == DSharpPlus.ChannelType.Text);
+                var covidReport = await this.covidTracker.GetCovidTrackerDataAsync("thailand");
+                var embed = new DiscordEmbedBuilder()
+                {
+                    Title = $"สถานการณ์ Covid-19 ของ {covidReport.Country} ณ วันที่ {DateTime.Now.ToString("dd/MM/yyyy")}",
+                    Description = covidReport.ToString(),
+                    Color = new Optional<DiscordColor>(DiscordColor.Red)
 
-            }.Build();
-            foreach (var channel in channels)
-            {
-                await channel.SendMessageAsync(embed);
+                }.Build();
+                foreach (var channel in channels)
+                {
+                    await channel.SendMessageAsync(embed);
+                }
             }
-
-            this.semaphore.Release();
+            finally
+            {
+                this.semaphore.Release();
+            }
         }
 
         public async Task DeleteTempChannels()
         {
             await this.semaphore.WaitAsync();
-            foreach (var channel in this._unitOfWork.TempChannelRepository)
+            try
             {
-                if (channel.ExpiredAt <= DateTime.Now)
+                foreach (var channelGroup in this._unitOfWork.TempChannelRepository.GroupBy(x => x.GroupId))
                 {
-                    try
+                    var parent = channelGroup.Single(x => x.ChannelType == Infrastructures.Common.Enum.ChannelType.Parent);
+                    if (parent.ExpiredAt <= DateTime.Now)
                     {
-                        var tempChannel = await this.Client.GetChannelAsync(channel.Id);
-                        if ((tempChannel.Type == DSharpPlus.ChannelType.Voice && !tempChannel.Users.Any()) || tempChannel.Type != DSharpPlus.ChannelType.Voice)
+                        try
                         {
-                            await tempChannel.DeleteAsync("expired");
+                            var text = channelGroup.Single(x => x.ChannelType == Infrastructures.Common.Enum.ChannelType.Text);
+                            var voice = channelGroup.Single(x => x.ChannelType == Infrastructures.Common.Enum.ChannelType.Voice);
+
+                            var parentChannel = this.Client.GetChannelAsync(parent.Id);
+                            var textChannel = await this.Client.GetChannelAsync(text.Id);
+                            var voiceChannel = await this.Client.GetChannelAsync(voice.Id);
+
+                            // if game-group text is already contains any message
+                            // it might getting some attention and should not be delete
+                            // and will remove from tracking temporary channels.
+                            if ((await textChannel.GetMessagesAsync(1)).Count > 0)
+                            {
+                                await textChannel.SendMessageAsync($"กลุ่มพูดคุยเกี่ยวกับ {parent.ChannelName} จะไม่ถูกลบอีกต่อไปเนื่องจากมีการพูดคุยเกิดขึ้นที่นี่ แต่ยังสามารถลบเองได้ด้วยมือได้เสมอเมื่อต้องการ!");
+                                await this._unitOfWork.TempChannelRepository.DeleteAsync(text);
+                                await this._unitOfWork.TempChannelRepository.DeleteAsync(voice);
+                                await this._unitOfWork.TempChannelRepository.DeleteAsync(parent);
+                                continue;
+                            }
+
+                            // if no message in text but user(s) still in voice chat
+                            // they might currently using the channel for some necessary battle-wise
+                            // so give them some more time!
+                            if (!voiceChannel.Users.Any())
+                            {
+                                await this._unitOfWork.TempChannelRepository.DeleteAsync(text);
+                                await textChannel.DeleteAsync("expired");
+                                await this._unitOfWork.TempChannelRepository.DeleteAsync(voice);
+                                await voiceChannel.DeleteAsync("expired");
+                                await this._unitOfWork.TempChannelRepository.DeleteAsync(parent);
+                                await (await parentChannel).DeleteAsync("expired");
+                            }
+                        }
+
+                        catch (Exception ex)
+                        {
+                            switch (ex)
+                            {
+                                case NotFoundException _:
+                                case BadRequestException _:
+
+                                    //continue due to this is related to discord and unable to handle on our side.
+                                    break;
+                                default:
+                                    var botIdentity = await this._unitOfWork.MemberRepository.FindOrCreateAsync(this.Client.CurrentUser.Id);
+                                    await this._unitOfWork.ErrorLogRepository.InsertAsync(new ErrorLog
+                                    {
+                                        Method = "DeleteTempChannels",
+                                        TriggeredBy = botIdentity,
+                                        Log = ex.ToString(),
+                                        CreatedAt = DateTime.Now
+                                    });
+                                    break;
+                            }
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        var botIdentity = await this._unitOfWork.MemberRepository.FindOrCreateAsync(this.Client.CurrentUser.Id);
-                        await this._unitOfWork.ErrorLogRepository.InsertAsync(new ErrorLog
-                        {
-                            Method = "DeleteTempChannels",
-                            TriggeredBy = botIdentity,
-                            Log = ex.ToString(),
-                            CreatedAt = DateTime.Now
-                        });
-                    }
-                    await this._unitOfWork.TempChannelRepository.DeleteAsync(channel);
                 }
+                await this._unitOfWork.SaveChangesAsync();
             }
-            await this._unitOfWork.SaveChangesAsync();
-            this.semaphore.Release();
+            finally
+            {
+                this.semaphore.Release();
+            }
         }
 
         public async Task SendStockPriceAsync()
         {
             await this.semaphore.WaitAsync();
-            var subscriptions = this._unitOfWork.StockSubscriptions.Select(x => new { x.DiscordMemberId, x.Symbol }).GroupBy(x => x.Symbol);
-            foreach (var group in subscriptions)
+            try
             {
-                var symbol = group.Key;
-                var stock = await this.stockPriceChecker.GetStockPriceAsync(symbol);
-                if (stock == null)
-                    continue;
-                var embedBuilder = new DiscordEmbedBuilder()
+                var subscriptions = this._unitOfWork.StockSubscriptions.Select(x => new { x.DiscordMemberId, x.Symbol }).GroupBy(x => x.Symbol);
+                foreach (var group in subscriptions)
                 {
-                    Color = new Optional<DiscordColor>(DiscordColor.White),
-                    Title = $"Stock price for {stock.Symbol} at {DateTime.Now:dd/MM/yy hh:mm:ss}",
-                    Description = $"Market Price : ${stock.RegularMarketPrice}\n" +
-                                  $"Market Open : ${stock.RegularMarketOpen}\n" +
-                                  $"Today Low : ${stock.RegularMarketDayLow}\n" +
-                                  $"Today High : ${stock.RegularMarketDayHigh}"
-                };
-                foreach (var discordMemberId in group.Select(x => x.DiscordMemberId))
-                {
-                    var member = this.Members.FirstOrDefault(x => x.Id == discordMemberId);
-                    if (member != null)
+                    var symbol = group.Key;
+                    var stock = await this.stockPriceChecker.GetStockPriceAsync(symbol);
+                    if (stock == null)
+                        continue;
+                    var embedBuilder = new DiscordEmbedBuilder()
                     {
-                        await member.SendMessageAsync(embedBuilder.Build());
+                        Color = new Optional<DiscordColor>(DiscordColor.White),
+                        Title = $"Stock price for {stock.Symbol} at {DateTime.Now:dd/MM/yy hh:mm:ss}",
+                        Description = $"Market Price : ${stock.RegularMarketPrice}\n" +
+                                      $"Market Open : ${stock.RegularMarketOpen}\n" +
+                                      $"Today Low : ${stock.RegularMarketDayLow}\n" +
+                                      $"Today High : ${stock.RegularMarketDayHigh}"
+                    };
+                    foreach (var discordMemberId in group.Select(x => x.DiscordMemberId))
+                    {
+                        var member = this.Members.FirstOrDefault(x => x.Id == discordMemberId);
+                        if (member != null)
+                        {
+                            await member.SendMessageAsync(embedBuilder.Build());
+                        }
                     }
                 }
             }
-            semaphore.Release();
+            finally
+            {
+                semaphore.Release();
+            }
         }
     }
 }

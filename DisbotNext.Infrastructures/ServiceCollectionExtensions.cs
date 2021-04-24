@@ -10,7 +10,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddDbContext<DisbotDbContext, SqliteDbContext>(o =>
             {
                 o.UseSqlite(connectionString);
-            });
+            }, ServiceLifetime.Transient);
             return services;
         }
     }
