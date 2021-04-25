@@ -219,6 +219,7 @@ namespace DisbotNext.DiscordClient
                     var avatar = AvatarHelpers.GetLevelupAvatar(e.Author.AvatarUrl, user.Level);
                     await channel.SendMessageAsync($"🎉🎉🎉 🥂{e.Author.Mention}🥂 ได้อัพเลเวลเป็น {user.Level}! 🎉🎉🎉 ");
                     await channel.SendFileAsync(avatar);
+                    File.Delete(avatar);
                 }
                 await this._unitOfWork.ChatLogRepository.InsertAsync(new ChatLog
                 {
