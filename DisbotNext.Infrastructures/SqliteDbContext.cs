@@ -17,7 +17,7 @@ namespace DisbotNext.Infrastructures.Sqlite
         public override DbSet<StockSubscription> StockSubscriptions { get; set; }
 
         public SqliteDbContext(DbContextOptions<SqliteDbContext> options) : base(options)
-        { 
+        {
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -44,6 +44,8 @@ namespace DisbotNext.Infrastructures.Sqlite
                 builder.Property(x => x.ChannelName);
                 builder.Property(x => x.CreatedAt);
                 builder.Property(x => x.ExpiredAt);
+                builder.Property(x => x.ChannelType).HasConversion<string>().IsRequired();
+                builder.Property(x => x.GroupId).IsRequired().ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<ErrorLog>(builder =>

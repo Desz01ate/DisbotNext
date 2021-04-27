@@ -17,6 +17,7 @@ using System.Threading;
 using DisbotNext.ExternalServices.CovidTracker;
 using DisbotNext.ExternalServices.Financial.Stock;
 using DisbotNext.Infrastructures.Common;
+using DisbotNext.Infrastructures.Common.Enum;
 
 namespace DisbotNext.DiscordClient
 {
@@ -44,6 +45,7 @@ namespace DisbotNext.DiscordClient
             this.Client.PresenceUpdated += Client_PresenceUpdated;
             this.Client.GuildDownloadCompleted += Client_GuildDownloadCompleted;
             this.Client.Heartbeated += Client_Heartbeated;
+            this.Client.ChannelDeleted += Client_ChannelDeleted;
             var commands = this.Client.UseCommandsNext(new CommandsNextConfiguration
             {
                 StringPrefixes = new[] { configuration.CommandPrefix },
@@ -57,6 +59,13 @@ namespace DisbotNext.DiscordClient
             RecurringJob.AddOrUpdate(() => DeleteTempChannels(), Cron.Minutely());
             RecurringJob.AddOrUpdate(() => SendDailyReportAsync(), configuration.DailyReportCron);
             RecurringJob.AddOrUpdate(() => SendStockPriceAsync(), Cron.MinuteInterval(15));
+        }
+
+        private async Task Client_ChannelDeleted(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.ChannelDeleteEventArgs e)
+        {
+            var deletedChannel = e.Channel;
+            await this._unitOfWork.TempChannelRepository.DeleteAsync(x => x.Id == deletedChannel.Id);
+            await this._unitOfWork.SaveChangesAsync();
         }
 
         private async Task Client_Heartbeated(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.HeartbeatEventArgs e)
@@ -107,10 +116,11 @@ namespace DisbotNext.DiscordClient
                 }
 
                 var createdAt = DateTime.Now;
+                var groupId = Guid.NewGuid();
 
-                await QueueDeleteTempChannelAsync(parentCategoryChannel, createdAt);
-                await QueueDeleteTempChannelAsync(textChannel, createdAt);
-                await QueueDeleteTempChannelAsync(voiceChannel, createdAt);
+                await QueueDeleteTempChannelAsync(parentCategoryChannel, createdAt, groupId, ChannelType.Parent);
+                await QueueDeleteTempChannelAsync(textChannel, createdAt, groupId, ChannelType.Text);
+                await QueueDeleteTempChannelAsync(voiceChannel, createdAt, groupId, ChannelType.Voice);
 
                 await this._unitOfWork.SaveChangesAsync();
             }
@@ -132,7 +142,7 @@ namespace DisbotNext.DiscordClient
                 }
             }
 
-            async Task QueueDeleteTempChannelAsync(DiscordChannel channel, DateTime createdAt)
+            async Task QueueDeleteTempChannelAsync(DiscordChannel channel, DateTime createdAt, Guid groupId, ChannelType channelType)
             {
                 await this._unitOfWork.TempChannelRepository.InsertAsync(new TempChannel
                 {
@@ -140,6 +150,8 @@ namespace DisbotNext.DiscordClient
                     ChannelName = channel.Name,
                     CreatedAt = createdAt,
                     ExpiredAt = createdAt.AddHours(1),
+                    ChannelType = channelType,
+                    GroupId = groupId,
                 });
             }
         }
@@ -207,6 +219,7 @@ namespace DisbotNext.DiscordClient
                     var avatar = AvatarHelpers.GetLevelupAvatar(e.Author.AvatarUrl, user.Level);
                     await channel.SendMessageAsync($"🎉🎉🎉 🥂{e.Author.Mention}🥂 ได้อัพเลเวลเป็น {user.Level}! 🎉🎉🎉 ");
                     await channel.SendFileAsync(avatar);
+                    File.Delete(avatar);
                 }
                 await this._unitOfWork.ChatLogRepository.InsertAsync(new ChatLog
                 {

@@ -13,7 +13,7 @@ namespace DisbotNext.Common.Configurations
         public static DiscordConfigurations GetConfiguration()
         {
             var commandPrefix = Environment.GetEnvironmentVariable("COMMAND_PREFIX") ?? "!";
-            var discordBotToken = Environment.GetEnvironmentVariable("DISCORD_BOT_TOKEN") ?? throw new Exception("No environment variable 'DISCORD_BOT_TOKEN' found.");
+            var discordBotToken = Environment.GetEnvironmentVariable("DISCORD_BOT_TOKEN") ?? throw new KeyNotFoundException("No environment variable 'DISCORD_BOT_TOKEN' found.");
             var cron = Environment.GetEnvironmentVariable("DAILY_REPORT_CRON") ?? "0 0 * * *";
             return new DiscordConfigurations()
             {

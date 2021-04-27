@@ -1,11 +1,5 @@
 ﻿using DisbotNext.Infrastructures.Common.Models;
-using DisbotNext.Infrastructures.Common.Models;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DisbotNext.Infrastructures.Common
 {
@@ -19,8 +13,7 @@ namespace DisbotNext.Infrastructures.Common
         public abstract DbSet<TempChannel> TempChannels { get; set; }
         public abstract DbSet<ErrorLog> ErrorLogs { get; set; }
         public abstract DbSet<StockSubscription> StockSubscriptions { get; set; }
-
-        public DisbotDbContext(DbContextOptions  options) : base(options)
+        public DisbotDbContext(DbContextOptions options) : base(options)
         {
         }
     }

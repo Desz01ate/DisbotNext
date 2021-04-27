@@ -24,6 +24,22 @@ namespace DisbotNext.Infrastructures.Common.Repository
             return ValueTask.CompletedTask;
         }
 
+        public async ValueTask DeleteAsync(Func<TempChannel, bool> predicate, CancellationToken cancellationToken = default)
+        {
+            var source = this.dbContext.TempChannels.Where(predicate);
+            if (source.Any())
+            {
+                await this.DeleteManyAsync(source, cancellationToken);
+            }
+        }
+
+        public ValueTask DeleteManyAsync(IEnumerable<TempChannel> source, CancellationToken cancellationToken = default)
+        {
+            this.dbContext.TempChannels.RemoveRange(source);
+            return ValueTask.CompletedTask;
+        }
+
+
         public async ValueTask<TempChannel?> FindAsync(params object[] keys)
         {
             return await this.dbContext.TempChannels.FindAsync(keys);
@@ -31,12 +47,12 @@ namespace DisbotNext.Infrastructures.Common.Repository
 
         public async ValueTask InsertAsync(TempChannel obj, CancellationToken cancellationToken = default)
         {
-            await this.dbContext.TempChannels.AddAsync(obj);
+            await this.dbContext.TempChannels.AddAsync(obj, cancellationToken);
         }
 
         public async ValueTask InsertManyAsync(IEnumerable<TempChannel> source, CancellationToken cancellationToken = default)
         {
-            await this.dbContext.TempChannels.AddRangeAsync(source);
+            await dbContext.TempChannels.AddRangeAsync(source, cancellationToken);
         }
 
         public ValueTask<IEnumerable<TempChannel>> WhereAsync(Func<TempChannel, bool> predicate, CancellationToken cancellationToken = default)
