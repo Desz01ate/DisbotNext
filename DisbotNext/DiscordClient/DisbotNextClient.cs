@@ -205,13 +205,13 @@ namespace DisbotNext.DiscordClient
             var channel = e.Channel;
             if (this.Channels.Contains(channel) && !e.Author.IsBot)
             {
-                (bool isRude, float _) = ThaiSen.Predict(e.Message.Content);
-                if (isRude)
-                {
-                    await channel.SendMessageAsync($"สุภาพหน่อย!");
-                    await channel.SendFileAsync(Path.Combine(Directory.GetCurrentDirectory(), "Assets", "language.jpg"));
-                    return;
-                }
+                //(bool isRude, float _) = ThaiSen.Predict(e.Message.Content);
+                //if (isRude)
+                //{
+                //    await channel.SendMessageAsync($"สุภาพหน่อย!");
+                //    await channel.SendFileAsync(Path.Combine(Directory.GetCurrentDirectory(), "Assets", "language.jpg"));
+                //    return;
+                //}
                 var user = await this._unitOfWork.MemberRepository.FindOrCreateAsync(e.Author.Id);
                 var levelUp = user.ExpGained(1);
                 if (levelUp)
