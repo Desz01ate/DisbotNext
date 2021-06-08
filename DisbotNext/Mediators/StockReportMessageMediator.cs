@@ -17,7 +17,7 @@ namespace DisbotNext.Mediators
 
         protected override async IAsyncEnumerable<DiscordEmbed?> GenerateDiscordEmbedsAsync(string? queryString, CancellationToken cancellationToken = default)
         {
-            var stock = await this._service.GetStockPriceAsync(queryString, cancellationToken);
+            var stock = await this.Service.GetStockPriceAsync(queryString, cancellationToken);
             if (stock == null)
                 yield break;
 

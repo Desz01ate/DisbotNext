@@ -11,11 +11,11 @@ namespace DisbotNext.Mediators
 {
     public abstract class BaseMediator<T> : IMessageMediator<T>
     {
-        protected readonly T _service;
+        protected readonly T Service;
 
         public BaseMediator(T service)
         {
-            this._service = service ?? throw new ArgumentNullException(nameof(service));
+            this.Service = service ?? throw new ArgumentNullException(nameof(service));
         }
 
         /// <summary>

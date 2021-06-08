@@ -18,7 +18,7 @@ namespace DisbotNext.Mediators
 
         protected override async IAsyncEnumerable<DiscordEmbed?> GenerateDiscordEmbedsAsync(string? queryString, CancellationToken cancellationToken = default)
         {
-            var result = await this._service.GetCovidTrackerDataAsync(queryString, cancellationToken);
+            var result = await this.Service.GetCovidTrackerDataAsync(queryString, cancellationToken);
             if (result == null)
                 yield break;
 

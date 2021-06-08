@@ -17,7 +17,7 @@ namespace DisbotNext.Mediators
 
         protected override async IAsyncEnumerable<DiscordEmbed?> GenerateDiscordEmbedsAsync(string? queryString, CancellationToken cancellationToken = default)
         {
-            var prices = await this._service.GetOilPriceAsync(cancellationToken);
+            var prices = await this.Service.GetOilPriceAsync(cancellationToken);
             var today = prices.SelectMany(x => x.Types)
                                .Where(x => x.PricePerLitre != null && x.RetailName != "พรุ่งนี้")
                                .GroupBy(x => x.Type)
