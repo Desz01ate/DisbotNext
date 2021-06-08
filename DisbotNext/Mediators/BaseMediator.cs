@@ -22,7 +22,7 @@ namespace DisbotNext.Mediators
         /// Generate discord embed instance in order to use to send.
         /// </summary>
         /// <returns></returns>
-        protected abstract IAsyncEnumerable<DiscordEmbed?> GenerateDiscordEmbedsAsync(string? queryString, CancellationToken cancellationToken = default);
+        protected abstract IAsyncEnumerable<DiscordEmbed?> EnumerateDiscordEmbedAsync(string? queryString, CancellationToken cancellationToken = default);
 
         /// <inheritdoc/>
         public async Task SendAsync(string? queryString, Func<DiscordEmbed, Task> action, CancellationToken cancellationToken = default)
@@ -30,7 +30,7 @@ namespace DisbotNext.Mediators
             if (action == null)
                 return;
 
-            await foreach (var embed in GenerateDiscordEmbedsAsync(queryString, cancellationToken))
+            await foreach (var embed in EnumerateDiscordEmbedAsync(queryString, cancellationToken))
             {
                 if (embed == null)
                     continue;
