@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace DisbotNext.Mediators
 {
-    public class StockReportMessageMediator : BaseMediator<IStockPriceChecker>
+    public class StockReportMessageMediator : MessageMediatorBase<IStockPriceChecker>
     {
         public StockReportMessageMediator(IStockPriceChecker stockPriceChecker) : base(stockPriceChecker)
         {

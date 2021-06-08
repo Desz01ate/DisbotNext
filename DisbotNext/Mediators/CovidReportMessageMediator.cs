@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace DisbotNext.Mediators
 {
-    public class CovidReportMessageMediator : BaseMediator<ICovidTracker>
+    public class CovidReportMessageMediator : MessageMediatorBase<ICovidTracker>
     {
         public CovidReportMessageMediator(ICovidTracker service) : base(service)
         {

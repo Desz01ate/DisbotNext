@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace DisbotNext.Mediators
 {
-    public class OilPriceMessageMediator : BaseMediator<IOilPriceChecker>
+    public class OilPriceMessageMediator : MessageMediatorBase<IOilPriceChecker>
     {
         public OilPriceMessageMediator(IOilPriceChecker service) : base(service)
         {

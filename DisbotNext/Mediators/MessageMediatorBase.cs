@@ -9,11 +9,11 @@ using System.Threading.Tasks;
 
 namespace DisbotNext.Mediators
 {
-    public abstract class BaseMediator<T> : IMessageMediator<T>
+    public abstract class MessageMediatorBase<T> : IMessageMediator<T>
     {
         protected readonly T Service;
 
-        public BaseMediator(T service)
+        public MessageMediatorBase(T service)
         {
             this.Service = service ?? throw new ArgumentNullException(nameof(service));
         }
