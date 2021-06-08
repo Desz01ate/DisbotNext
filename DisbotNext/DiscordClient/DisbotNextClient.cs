@@ -1,43 +1,39 @@
 ﻿using DisbotNext.Common;
 using DisbotNext.Common.Configurations;
-using DisbotNext.DiscordClient.Commands;
-using DSharpPlus.Entities;
-using System.Collections.Immutable;
-using System.Linq;
 using DisbotNext.Common.Extensions;
-using DisbotNext.Helpers;
-using Laploy.ThaiSen.ML;
-using System.Threading.Tasks;
-using System.IO;
-using System;
-using DSharpPlus.CommandsNext;
-using DisbotNext.Infrastructures.Common.Models;
-using Hangfire;
-using System.Threading;
+using DisbotNext.DiscordClient.Commands;
 using DisbotNext.ExternalServices.CovidTracker;
-using DisbotNext.ExternalServices.Financial.Stock;
+using DisbotNext.Helpers;
 using DisbotNext.Infrastructures.Common;
 using DisbotNext.Infrastructures.Common.Enum;
+using DisbotNext.Infrastructures.Common.Models;
+using DisbotNext.Interfaces;
+using DSharpPlus.CommandsNext;
+using DSharpPlus.Entities;
+using Hangfire;
+using System;
+using System.Collections.Immutable;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace DisbotNext.DiscordClient
 {
     public partial class DisbotNextClient : DiscordClientAbstract
     {
         private readonly SemaphoreSlim semaphore;
-        private readonly ICovidTracker covidTracker;
-        private readonly IStockPriceChecker stockPriceChecker;
         private readonly UnitOfWork _unitOfWork;
+        private readonly IMessageMediator<ICovidTracker> _covidMessageMediator;
 
         public DisbotNextClient(IServiceProvider service,
-                                ICovidTracker covidTracker,
-                                IStockPriceChecker stockPriceChecker,
+                                IMessageMediator<ICovidTracker> covidMessageMediator,
                                 UnitOfWork unitOfWork,
                                 DiscordConfigurations configuration) : base(configuration)
         {
             this.semaphore = new SemaphoreSlim(1, 1);
-            this.covidTracker = covidTracker;
-            this.stockPriceChecker = stockPriceChecker;
-            this._unitOfWork = unitOfWork;
+            this._covidMessageMediator = covidMessageMediator ?? throw new ArgumentNullException(nameof(covidMessageMediator));
+            this._unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
             this.Client.MessageCreated += Client_MessageCreated;
             this.Client.MessageReactionAdded += Client_MessageReactionAdded;
             this.Client.MessageReactionRemoved += Client_MessageReactionRemoved;
@@ -58,7 +54,6 @@ namespace DisbotNext.DiscordClient
 
             RecurringJob.AddOrUpdate(() => DeleteTempChannels(), Cron.Minutely());
             RecurringJob.AddOrUpdate(() => SendDailyReportAsync(), configuration.DailyReportCron);
-            RecurringJob.AddOrUpdate(() => SendStockPriceAsync(), Cron.MinuteInterval(15));
         }
 
         private async Task Client_ChannelDeleted(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.ChannelDeleteEventArgs e)
@@ -228,7 +223,6 @@ namespace DisbotNext.DiscordClient
                     CreateAt = DateTime.Now
                 });
                 await this._unitOfWork.SaveChangesAsync();
-
             }
         }
     }

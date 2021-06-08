@@ -4,6 +4,8 @@ using DisbotNext.ExternalServices.CovidTracker;
 using DisbotNext.ExternalServices.Financial.Stock;
 using DisbotNext.ExternalServices.OilPriceChecker;
 using DisbotNext.Infrastructures.Common;
+using DisbotNext.Interfaces;
+using DisbotNext.Mediators;
 using Hangfire;
 using Hangfire.LiteDB;
 using Microsoft.EntityFrameworkCore;
@@ -83,6 +85,9 @@ namespace DisbotNext
                     services.AddTransient<ICovidTracker, CovidTracker>();
                     services.AddTransient<IOilPriceChecker, OilPriceWebScraping>();
                     services.AddTransient<IStockPriceChecker, StockPriceChecker>();
+                    services.AddTransient<IMessageMediator<ICovidTracker>, CovidReportMessageMediator>();
+                    services.AddTransient<IMessageMediator<IOilPriceChecker>, OilPriceMessageMediator>();
+                    services.AddTransient<IMessageMediator<IStockPriceChecker>, StockReportMessageMediator>();
                     services.AddHostedService<Application>();
                 })
                 .UseConsoleLifetime();

@@ -1,6 +1,7 @@
 ﻿using DisbotNext.Infrastructures.Common.Models;
 using DSharpPlus.Entities;
 using DSharpPlus.Exceptions;
+using Microsoft.ML.Runtime;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -15,17 +16,9 @@ namespace DisbotNext.DiscordClient
             try
             {
                 var channels = this.Channels.Where(x => x.Name == "daily-report" && x.Type == DSharpPlus.ChannelType.Text);
-                var covidReport = await this.covidTracker.GetCovidTrackerDataAsync("thailand");
-                var embed = new DiscordEmbedBuilder()
-                {
-                    Title = $"สถานการณ์ Covid-19 ของ {covidReport.Country} ณ วันที่ {DateTime.Now.ToString("dd/MM/yyyy")}",
-                    Description = covidReport.ToString(),
-                    Color = new Optional<DiscordColor>(DiscordColor.Red)
-
-                }.Build();
                 foreach (var channel in channels)
                 {
-                    await channel.SendMessageAsync(embed);
+                    await this._covidMessageMediator.SendAsync("thailand", channel.SendMessageAsync);
                 }
             }
             finally
@@ -107,43 +100,6 @@ namespace DisbotNext.DiscordClient
             finally
             {
                 this.semaphore.Release();
-            }
-        }
-
-        public async Task SendStockPriceAsync()
-        {
-            await this.semaphore.WaitAsync();
-            try
-            {
-                var subscriptions = this._unitOfWork.StockSubscriptions.Select(x => new { x.DiscordMemberId, x.Symbol }).GroupBy(x => x.Symbol);
-                foreach (var group in subscriptions)
-                {
-                    var symbol = group.Key;
-                    var stock = await this.stockPriceChecker.GetStockPriceAsync(symbol);
-                    if (stock == null)
-                        continue;
-                    var embedBuilder = new DiscordEmbedBuilder()
-                    {
-                        Color = new Optional<DiscordColor>(DiscordColor.White),
-                        Title = $"Stock price for {stock.Symbol} at {DateTime.Now:dd/MM/yy hh:mm:ss}",
-                        Description = $"Market Price : ${stock.RegularMarketPrice}\n" +
-                                      $"Market Open : ${stock.RegularMarketOpen}\n" +
-                                      $"Today Low : ${stock.RegularMarketDayLow}\n" +
-                                      $"Today High : ${stock.RegularMarketDayHigh}"
-                    };
-                    foreach (var discordMemberId in group.Select(x => x.DiscordMemberId))
-                    {
-                        var member = this.Members.FirstOrDefault(x => x.Id == discordMemberId);
-                        if (member != null)
-                        {
-                            await member.SendMessageAsync(embedBuilder.Build());
-                        }
-                    }
-                }
-            }
-            finally
-            {
-                semaphore.Release();
             }
         }
     }
