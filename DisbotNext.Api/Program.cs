@@ -15,10 +15,11 @@ namespace DisbotNext.Api
         public static async Task Main(string[] args)
         {
             var web = CreateHostBuilder(args).Build();
-            using var scope = web.Services.CreateScope();
-            var host = scope.ServiceProvider.GetRequiredService<IHost>();
+
+            var config = web.Services.GetRequiredService<IConfiguration>();
+            var host = StartHostServiceAsync(config);
+
             await web.RunAsync();
-            await host.RunAsync();
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
