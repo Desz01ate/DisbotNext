@@ -2,7 +2,7 @@ name: node js pull request continuous integration
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
 
 jobs:
   build:
