@@ -10,11 +10,8 @@ namespace DisbotNext.Common.Configurations
         public string CommandPrefix { get; set; }
         public string DailyReportCron { get; set; }
 
-        public static DiscordConfigurations GetConfiguration()
+        public static DiscordConfigurations GetConfiguration(string discordBotToken, string commandPrefix = "!", string cron = "0 0 * * *")
         {
-            var commandPrefix = Environment.GetEnvironmentVariable("COMMAND_PREFIX") ?? "!";
-            var discordBotToken = Environment.GetEnvironmentVariable("DISCORD_BOT_TOKEN") ?? throw new KeyNotFoundException("No environment variable 'DISCORD_BOT_TOKEN' found.");
-            var cron = Environment.GetEnvironmentVariable("DAILY_REPORT_CRON") ?? "0 0 * * *";
             return new DiscordConfigurations()
             {
                 CommandPrefix = commandPrefix,

@@ -362,3 +362,6 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /DisbotNext/Properties/launchSettings.json
+
+#Auto-generated db cache
+*.db

@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -64,13 +65,26 @@ namespace DisbotNext
 
         public static IHostBuilder CreateHostBuilder(string[] args)
         {
+            string connectionString, botToken, cron;
+            if (args.Any())
+            {
+                connectionString = args[0];
+                botToken = args[1];
+                cron = args[2];
+            }
+            else
+            {
+                connectionString = Environment.GetEnvironmentVariable("DISBOT_CONNECTION_STRING") ?? $@"Data Source={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Local.db")}";
+                //var commandPrefix = Environment.GetEnvironmentVariable("COMMAND_PREFIX") ?? "!";
+                botToken = Environment.GetEnvironmentVariable("DISCORD_BOT_TOKEN") ?? throw new KeyNotFoundException("No environment variable 'DISCORD_BOT_TOKEN' found.");
+                cron = Environment.GetEnvironmentVariable("DAILY_REPORT_CRON") ?? "0 0 * * *";
+            }
+
             var host = new HostBuilder()
                 .ConfigureServices(services =>
                 {
-
                     services.AddHttpClient();
 
-                    var connectionString = Environment.GetEnvironmentVariable("DISBOT_CONNECTION_STRING") ?? $@"Data Source={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Local.db")}";
                     services.AddSqliteDbContext(connectionString);
 
                     services.AddHangfire(config =>
@@ -80,7 +94,7 @@ namespace DisbotNext
                     });
                     services.AddHangfireServer();
                     services.AddSingleton<DisbotNextClient>();
-                    services.AddScoped(_ => DiscordConfigurations.GetConfiguration());
+                    services.AddScoped(_ => DiscordConfigurations.GetConfiguration(botToken, cron: cron));
                     services.AddScoped<UnitOfWork>();
                     services.AddTransient<ICovidTracker, CovidTracker>();
                     services.AddTransient<IOilPriceChecker, OilPriceWebScraping>();
