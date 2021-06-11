@@ -3,9 +3,9 @@ using System.Threading.Tasks;
 
 namespace DisbotNext
 {
-    class Program
+    public class Program
     {
-        static async Task Main(string[] args)
+        public static async Task Main(string[] args)
         {
             Bootstrap.PrintGraffiti();
             var host = Bootstrap.CreateHostBuilder(args).Build();

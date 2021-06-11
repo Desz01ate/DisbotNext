@@ -1,8 +1,8 @@
-name: Pull Request CI
+name: dotnet core pull request continuous integration
 
 on:
   pull_request:
-    branches: [ master, nightly-build ]
+    branches: [ master ]
 
 jobs:
   build:
