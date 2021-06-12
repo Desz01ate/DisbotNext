@@ -1,32 +1,41 @@
 <template>
   <div class="about">
-    <h1>DisbotNext Configuration</h1>
-    <div>
-      <h3>Bot Token: <input type="password" v-model="botToken" /></h3>
-      <h3>Report Cron: <input type="text" v-model="reportCron" /></h3>
-    </div>
+    <h1 style="text-align: left; margin: 10px">DisbotNext Configuration</h1>
     <br />
-    <div>
-      <h3>
-        Save Changes:
-        <button class="btn btn-primary" v-on:click="saveChangesAsync">
-          Save
-        </button>
-      </h3>
-      <h3>
-        Restart Service:
-        <button class="btn btn-danger" disabled v-on:click="restartServiceAsync">
-          Restart
-        </button>
-      </h3>
-    </div>
+    <config-row label="Bot Token">
+      <input type="password" class="input-width" v-model="botToken" />
+    </config-row>
+    <config-row label="Report Cron"
+      ><input type="text" class="input-width" v-model="reportCron" />
+    </config-row>
+    <config-row label="Save Changes">
+      <button
+        class="btn btn-primary btn-width"
+        v-on:click="saveChangesAsync"
+      >
+        Save
+      </button>
+    </config-row>
+    <config-row label="Restart Service">
+      <button
+        class="btn btn-danger btn-width"
+        disabled
+        v-on:click="restartServiceAsync"
+      >
+        Restart
+      </button>
+    </config-row>
   </div>
 </template>
 
 <script>
 import { defineComponent } from "vue";
+import ConfigRow from "../components/ConfigRow.vue";
 
 export default defineComponent({
+  components: {
+    ConfigRow,
+  },
   computed: {
     botToken: {
       get() {
@@ -74,3 +83,13 @@ export default defineComponent({
   },
 });
 </script>
+
+<style lang="postcss" scoped>
+.btn-width {
+  width: 100px;
+}
+
+.input-width {
+  width: 500px;
+}
+</style>
