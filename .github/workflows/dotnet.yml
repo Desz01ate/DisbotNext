@@ -1,11 +1,11 @@
-name: merge to master
+name: dotnet core pull request continuous integration
 
 on:
-  push:
+  pull_request:
     branches: [ master ]
 
 jobs:
-  build_dotnet_core:
+  build:
 
     runs-on: ubuntu-latest
 
@@ -21,36 +21,3 @@ jobs:
       run: dotnet build --no-restore
     - name: Test
       run: dotnet test --no-build --verbosity normal
-    - name: Publish ubuntu 20.04 x64
-      run: dotnet publish -c Release -r ubuntu.20.04-x64
-    - name: Publish windows 10 x64
-      run: dotnet publish -c Release -r win10-x64
-    - name: Upload ubuntu build artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: DisbotNext_ubuntu_2004_x64
-        path: /home/runner/work/DisbotNext/DisbotNext/DisbotNext.Api/bin/Release/net5.0/ubuntu.20.04-x64/publish/
-    - name: Upload windows build artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: DisbotNext_win10_x64
-        path: /home/runner/work/DisbotNext/DisbotNext/DisbotNext.Api/bin/Release/net5.0/win10-x64/publish/
-  
-  build_node_js:
-
-    runs-on: ubuntu-latest
-    
-    steps:
-      - uses: actions/checkout@v2
-      - name: Use Node.js 15.x
-        uses: actions/setup-node@v1
-        with:
-          node-version: 15.x
-      - run: npm install
-      - run: npm ci
-      - run: npm run build --if-present
-      - name: Upload dist artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: DisbotNext_web
-          path: /home/runner/work/DisbotNext/DisBotNext/DisbotNext.Web/dist/
