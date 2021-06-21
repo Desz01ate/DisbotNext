@@ -27,7 +27,7 @@ namespace DisbotNext.Infrastructures.Common.Repository
         // <inheritdoc/>
         public async ValueTask<Member?> FindAsync(params object[] keys)
         {
-            return await this.dbContext.Members.FindAsync(keys); ;
+            return await this.dbContext.Members.FindAsync(keys);
         }
 
         // <inheritdoc />

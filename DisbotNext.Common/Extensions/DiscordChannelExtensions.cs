@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace DisbotNext.Common.Extensions
@@ -16,7 +17,7 @@ namespace DisbotNext.Common.Extensions
         /// <param name="message"></param>
         /// <param name="deleteInMs"></param>
         /// <returns></returns>
-        public static async Task SendDisposableMessageAsync(this DiscordChannel channel, string message, int deleteInMs = 10000)
+        public static async Task SendDisposableMessageAsync(this DiscordChannel channel, string message, int deleteInMs = 10000, CancellationToken cancellationToken = default)
         {
             var sentMessage = await channel.SendMessageAsync(message);
             Task.Delay(deleteInMs).ContinueWith(async (arg) =>
@@ -33,7 +34,7 @@ namespace DisbotNext.Common.Extensions
         /// <param name="message"></param>
         /// <param name="deleteInMs"></param>
         /// <returns></returns>
-        public static async Task SendDisposableFileAsync(this DiscordChannel channel, string filePath, int deleteInMs = 10000)
+        public static async Task SendDisposableFileAsync(this DiscordChannel channel, string filePath, int deleteInMs = 10000, CancellationToken cancellationToken = default)
         {
             using var fileStream = new FileStream(filePath, FileMode.Open);
             var messageBuilder = new DiscordMessageBuilder();
@@ -45,12 +46,14 @@ namespace DisbotNext.Common.Extensions
             });
         }
 
-        public static async Task SendFileAsync(this DiscordChannel channel, string filePath)
+        public static async Task SendFileAsync(this DiscordChannel channel, string filePath, bool deleteFile = false, CancellationToken cancellationToken = default)
         {
             using var fileStream = new FileStream(filePath, FileMode.Open);
             var messageBuilder = new DiscordMessageBuilder();
             messageBuilder.WithFile(Path.GetFileName(filePath), fileStream, true);
             var sentMessage = await channel.SendMessageAsync(messageBuilder);
+            if (deleteFile)
+                File.Delete(filePath);
         }
     }
 }

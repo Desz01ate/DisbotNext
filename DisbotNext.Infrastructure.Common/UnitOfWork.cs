@@ -37,7 +37,7 @@ namespace DisbotNext.Infrastructures.Common
 
         public Task SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            return this.dbContext.SaveChangesAsync();
+            return this.dbContext.SaveChangesAsync(cancellationToken);
         }
 
         protected virtual void Disposed(bool disposing)

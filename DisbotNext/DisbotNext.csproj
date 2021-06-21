@@ -15,7 +15,6 @@
     <PackageReference Include="Hangfire.LiteDB" Version="0.4.0" />
     <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-beta11" />
     <PackageReference Include="YahooFinanceApi" Version="2.1.2" />
-    <PackageReference Include="ThaiSenLoy" Version="1.0.3" />
   </ItemGroup>
 
   <ItemGroup>
@@ -26,7 +25,6 @@
 
   <ItemGroup>
     <Folder Include="Assets\" />
-    <Folder Include="Model\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -35,9 +33,6 @@
     </None>
     <None Update="Assets\tahoma.ttf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Model\MLModel.zip">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 

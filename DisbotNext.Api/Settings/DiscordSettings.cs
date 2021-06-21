@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 
 namespace DisbotNext.Api.Settings
 {
-    public class DiscordSettings
+    public record DiscordSettings
     {
-        public string BotToken { get; set; }
-        public string ReportCron { get; set; }
+        public string BotToken { get; init; }
+        public string ReportCron { get; init; }
     }
 }
