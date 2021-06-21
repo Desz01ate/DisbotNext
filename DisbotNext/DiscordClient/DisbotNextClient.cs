@@ -11,6 +11,7 @@ using DisbotNext.Interfaces;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using Hangfire;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Immutable;
 using System.IO;
@@ -24,14 +25,17 @@ namespace DisbotNext.DiscordClient
     {
         private readonly SemaphoreSlim semaphore;
         private readonly UnitOfWork _unitOfWork;
+        private readonly ILogger _logger;
         private readonly IMessageMediator<ICovidTracker> _covidMessageMediator;
 
-        public DisbotNextClient(IServiceProvider service,
+        public DisbotNextClient(ILogger<DisbotNextClient> logger,
+                                IServiceProvider service,
                                 IMessageMediator<ICovidTracker> covidMessageMediator,
                                 UnitOfWork unitOfWork,
                                 DiscordConfigurations configuration) : base(configuration)
         {
             this.semaphore = new SemaphoreSlim(1, 1);
+            this._logger = logger;
             this._covidMessageMediator = covidMessageMediator ?? throw new ArgumentNullException(nameof(covidMessageMediator));
             this._unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
             this.Client.MessageCreated += Client_MessageCreated;
@@ -58,6 +62,7 @@ namespace DisbotNext.DiscordClient
 
         private async Task Client_ChannelDeleted(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.ChannelDeleteEventArgs e)
         {
+            this._logger.LogInformation("Channel deleted triggered.");
             var deletedChannel = e.Channel;
             await this._unitOfWork.TempChannelRepository.DeleteAsync(x => x.Id == deletedChannel.Id);
             await this._unitOfWork.SaveChangesAsync();
@@ -65,7 +70,9 @@ namespace DisbotNext.DiscordClient
 
         private async Task Client_Heartbeated(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.HeartbeatEventArgs e)
         {
-            var activeChannels = this._unitOfWork.TempChannelRepository.Count(x => x.ChannelName != "text" && x.ChannelName != "voice");
+            this._logger.LogInformation("Heartbeated triggered.");
+            var activeChannels = this._unitOfWork.TempChannelRepository.GroupBy(x => x.GroupId).Count(); //.Count(x => x.ChannelName != "text" && x.ChannelName != "voice");
+            this._logger.LogTrace($"{activeChannels} channels tracking.");
             await sender.UpdateStatusAsync(new DiscordActivity
             {
                 ActivityType = ActivityType.Watching,
@@ -75,6 +82,7 @@ namespace DisbotNext.DiscordClient
 
         private async Task Client_GuildDownloadCompleted(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.GuildDownloadCompletedEventArgs e)
         {
+            this._logger.LogTrace("Guild download completed.");
             foreach (var channel in this.Channels.Where(x => x.Name == "bot-status" && x.Type == DSharpPlus.ChannelType.Text))
             {
                 await channel.SendMessageAsync($"[{DateTime.Now}] ขณะนี้บอทพร้อมใช้งานแล้ว");
@@ -87,6 +95,7 @@ namespace DisbotNext.DiscordClient
             if (presence.User.IsBot)
                 return;
 
+            this._logger.LogInformation($"{e.User.Username} trigger presence updated.");
             var guild = presence.Guild;
             var channels = await guild.GetChannelsAsync();
             DiscordChannel? parentCategoryChannel, textChannel, voiceChannel;
@@ -94,21 +103,10 @@ namespace DisbotNext.DiscordClient
             {
                 if (presence.Activity.Name == "Custom Status")
                     return;
-                parentCategoryChannel = channels.FirstOrDefault(x => x.Name == presence.Activity.Name && x.Type == DSharpPlus.ChannelType.Category) ?? await guild.CreateChannelAsync(presence.Activity.Name, DSharpPlus.ChannelType.Category);
+                parentCategoryChannel = channels.FirstOrDefault(x => x.Name == presence.Activity.Name && x.Type == DSharpPlus.ChannelType.Category)
+                                        ?? await guild.CreateChannelAsync(presence.Activity.Name, DSharpPlus.ChannelType.Category);
                 textChannel = await guild.CreateChannelAsync("text", DSharpPlus.ChannelType.Text, parentCategoryChannel);
                 voiceChannel = await guild.CreateChannelAsync("voice", DSharpPlus.ChannelType.Voice, parentCategoryChannel);
-
-                var user = await this._unitOfWork.MemberRepository.FindOrCreateAsync(e.User.Id);
-                if (user.AutoMoveToChannel)
-                {
-                    var member = await guild.GetMemberAsync(user.Id);
-                    var voiceState = member.VoiceState;
-                    // we can only move people when they are already in any voice channel.
-                    if (voiceState != null)
-                    {
-                        await voiceChannel.PlaceMemberAsync(member);
-                    }
-                }
 
                 var createdAt = DateTime.Now;
                 var groupId = Guid.NewGuid();
@@ -153,6 +151,7 @@ namespace DisbotNext.DiscordClient
 
         private async Task Commands_CommandErrored(CommandsNextExtension sender, CommandErrorEventArgs e)
         {
+            this._logger.LogError(e.Exception, $"Unexpected error occurred by [{e.Command.Name}]");
             var triggeredMember = await this._unitOfWork.MemberRepository.FindOrCreateAsync(e.Context.User.Id);
             var log = new ErrorLog()
             {
@@ -166,64 +165,77 @@ namespace DisbotNext.DiscordClient
 
         private async Task Client_GuildMemberAdded(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.GuildMemberAddEventArgs e)
         {
+            this._logger.LogTrace($"{e.Member.Username} has been added to guild.");
             await this._unitOfWork.MemberRepository.FindOrCreateAsync(e.Member.Id);
             await this._unitOfWork.SaveChangesAsync();
         }
 
         private async Task Client_MessageReactionRemoved(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.MessageReactionRemoveEventArgs e)
         {
+            this._logger.LogTrace($"Message reaction removed event triggered.");
             var channel = e.Channel;
             var message = await channel.GetMessageAsync(e.Message.Id);
-            if (this.Channels.Contains(channel) && !message.Author.IsBot && message.Author.Id != e.User.Id)
-            {
-                var user = await this._unitOfWork.MemberRepository.FindOrCreateAsync(message.Author.Id);
-                user.ExpGained(-1);
-                await this._unitOfWork.SaveChangesAsync();
-            }
+            if (message.Author.IsBot ||
+                message.Author.Id == e.User.Id ||
+                !this.Channels.Contains(channel))
+                return;
+
+            var user = await this._unitOfWork.MemberRepository.FindOrCreateAsync(message.Author.Id);
+            user.ExpGained(-1);
+            await this._unitOfWork.SaveChangesAsync();
         }
 
         private async Task Client_MessageReactionAdded(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.MessageReactionAddEventArgs e)
         {
+            this._logger.LogTrace($"Message reaction added event triggered.");
             var channel = e.Channel;
             var message = await channel.GetMessageAsync(e.Message.Id);
-            if (this.Channels.Contains(channel) && !message.Author.IsBot && message.Author.Id != e.User.Id)
-            {
-                var user = await this._unitOfWork.MemberRepository.FindOrCreateAsync(message.Author.Id);
-                user.ExpGained(1);
-                await this._unitOfWork.SaveChangesAsync();
-                await channel.SendDisposableMessageAsync($"มีคนชอบข้อความที่คุณเขียน {message.Author.Mention} และคุณได้รับ 1 EXP!");
-            }
+            if (message.Author.IsBot ||
+                message.Author.Id == e.User.Id ||
+                !this.Channels.Contains(channel))
+                return;
+
+            var user = await this._unitOfWork.MemberRepository.FindOrCreateAsync(message.Author.Id);
+            user.ExpGained(1);
+            await this._unitOfWork.SaveChangesAsync();
+            await channel.SendDisposableMessageAsync($"มีคนชอบข้อความที่คุณเขียน {message.Author.Mention} และคุณได้รับ 1 EXP!");
         }
 
         private async Task Client_MessageCreated(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.MessageCreateEventArgs e)
         {
+            this._logger.LogInformation("Message created event triggered.");
             var channel = e.Channel;
-            if (this.Channels.Contains(channel) && !e.Author.IsBot)
+
+            if (!this.Channels.Contains(channel) ||
+                e.Author.IsBot)
+                return;
+
+
+            var user = await this._unitOfWork.MemberRepository.FindOrCreateAsync(e.Author.Id);
+            var levelUp = user.ExpGained(1);
+            if (levelUp)
             {
-                //(bool isRude, float _) = ThaiSen.Predict(e.Message.Content);
-                //if (isRude)
-                //{
-                //    await channel.SendMessageAsync($"สุภาพหน่อย!");
-                //    await channel.SendFileAsync(Path.Combine(Directory.GetCurrentDirectory(), "Assets", "language.jpg"));
-                //    return;
-                //}
-                var user = await this._unitOfWork.MemberRepository.FindOrCreateAsync(e.Author.Id);
-                var levelUp = user.ExpGained(1);
-                if (levelUp)
-                {
-                    var avatar = AvatarHelpers.GetLevelupAvatar(e.Author.AvatarUrl, user.Level);
-                    await channel.SendMessageAsync($"🎉🎉🎉 🥂{e.Author.Mention}🥂 ได้อัพเลเวลเป็น {user.Level}! 🎉🎉🎉 ");
-                    await channel.SendFileAsync(avatar);
-                    File.Delete(avatar);
-                }
-                await this._unitOfWork.ChatLogRepository.InsertAsync(new ChatLog
-                {
-                    Author = user,
-                    Content = e.Message.Content,
-                    CreateAt = DateTime.Now
-                });
-                await this._unitOfWork.SaveChangesAsync();
+                var avatar = AvatarHelpers.GetLevelUpAvatarPath(e.Author.AvatarUrl, user.Level);
+                await channel.SendMessageAsync($"🎉🎉🎉 🥂{e.Author.Mention}🥂 ได้อัพเลเวลเป็น {user.Level}! 🎉🎉🎉 ");
+                await channel.SendFileAsync(avatar, true);
             }
+            string content;
+            if (!string.IsNullOrWhiteSpace(e.Message.Content))
+            {
+                content = e.Message.Content;
+            }
+            else
+            {
+                content = string.Join(',', e.Message.Attachments.Select(x => x.Url));
+            }
+
+            await this._unitOfWork.ChatLogRepository.InsertAsync(new ChatLog
+            {
+                Author = user,
+                Content = content,
+                CreateAt = DateTime.Now
+            });
+            await this._unitOfWork.SaveChangesAsync();
         }
     }
 }

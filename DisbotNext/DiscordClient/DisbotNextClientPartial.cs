@@ -1,7 +1,5 @@
 ﻿using DisbotNext.Infrastructures.Common.Models;
-using DSharpPlus.Entities;
 using DSharpPlus.Exceptions;
-using Microsoft.ML.Runtime;
 using System;
 using System.Linq;
 using System.Threading.Tasks;

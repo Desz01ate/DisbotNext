@@ -11,6 +11,7 @@ using Hangfire.LiteDB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -83,6 +84,8 @@ namespace DisbotNext
             var host = new HostBuilder()
                 .ConfigureServices(services =>
                 {
+                    services.AddLogging(config => config.AddConsole());
+
                     services.AddHttpClient();
 
                     services.AddSqliteDbContext(connectionString);
