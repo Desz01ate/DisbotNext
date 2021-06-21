@@ -14,6 +14,7 @@ using DisbotNext.ExternalServices.Financial.Stock;
 using DisbotNext.Infrastructures.Common;
 using DisbotNext.Infrastructures.Common.Models;
 using DisbotNext.Interfaces;
+using DisbotNext.Helpers;
 
 namespace DisbotNext.DiscordClient.Commands
 {
@@ -35,6 +36,14 @@ namespace DisbotNext.DiscordClient.Commands
             this._covidTracker = covidTracker;
             this._oilPriceChecker = oilPriceChecker;
             this._stockPriceChecker = stockPriceChecker;
+        }
+
+        [Command("level")]
+        public async Task GetLevelAvatar(CommandContext ctx)
+        {
+            var member = await this._unitOfWork.MemberRepository.FindOrCreateAsync(ctx.Member.Id);
+            var avatar = AvatarHelpers.GetLevelUpAvatarPath(ctx.Member.AvatarUrl, member.Level);
+            await ctx.SendFileAsync(avatar, true);
         }
 
         [Command("test")]

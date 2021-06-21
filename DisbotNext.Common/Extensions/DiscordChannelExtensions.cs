@@ -1,4 +1,5 @@
-﻿using DSharpPlus.Entities;
+﻿using DSharpPlus.CommandsNext;
+using DSharpPlus.Entities;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -52,6 +53,16 @@ namespace DisbotNext.Common.Extensions
             var messageBuilder = new DiscordMessageBuilder();
             messageBuilder.WithFile(Path.GetFileName(filePath), fileStream, true);
             var sentMessage = await channel.SendMessageAsync(messageBuilder);
+            if (deleteFile)
+                File.Delete(filePath);
+        }
+
+        public static async Task SendFileAsync(this CommandContext context, string filePath, bool deleteFile = false, CancellationToken cancellationToken = default)
+        {
+            using var fileStream = new FileStream(filePath, FileMode.Open);
+            var messageBuilder = new DiscordMessageBuilder();
+            messageBuilder.WithFile(Path.GetFileName(filePath), fileStream, true);
+            var sentMessage = await context.RespondAsync(messageBuilder);
             if (deleteFile)
                 File.Delete(filePath);
         }
