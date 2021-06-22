@@ -3,9 +3,13 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 
 namespace DisbotNext.Helpers
@@ -16,20 +20,51 @@ namespace DisbotNext.Helpers
         {
             var tempDir = Path.Combine(Directory.GetCurrentDirectory(), "Temp");
             Directory.CreateDirectory(tempDir);
-            var tempFile = Path.Combine(tempDir, Guid.NewGuid() + ".png");
-            Console.WriteLine($"Generating file {tempFile}");
             using var webClient = new WebClient();
             var bytes = webClient.DownloadData(url);
             using var avatar = Image.Load(bytes);
 
-            avatar.Mutate(x => x.Resize(512, 512));
+            if (avatar.Frames.Count == 1) //jpeg, png
+            {
+                var tempFile = Path.Combine(tempDir, Guid.NewGuid() + ".png");
+                using var banner = ProcessImage(avatar, level);
+                banner.Save(tempFile);
+                return tempFile;
+            }
+            else //gif
+            {
+                var tempFile = Path.Combine(tempDir, Guid.NewGuid() + ".gif");
+                using var banner = ProcessImage(avatar, level);
+                banner.SaveAsGif(tempFile);
+                return tempFile;
+            }
 
-            using var banner = avatar.Clone(x => x.GaussianBlur(12f)
-                                                  .Opacity(0.33f)
-                                                  .Crop(avatar.Width, (int)(avatar.Height * 0.333)));
+        }
 
-            avatar.Mutate(x => x.Resize(banner.Height, banner.Height));
-            banner.Mutate(x => x.DrawImage(avatar, 1f));
+        private static Image ProcessImage(Image image, int level)
+        {
+            if (image == null)
+                throw new ArgumentNullException(nameof(image));
+
+            image.Mutate(x => x.Resize(512, 512));
+
+            Action<IImageProcessingContext> bannerProcessor;
+            if (image.Frames.Count == 1)
+            {
+                bannerProcessor = x => x.GaussianBlur(5f)
+                                           .Opacity(0.33f)
+                                           .Crop(image.Width, (int)(image.Height * 0.333));
+            }
+            else
+            {
+                bannerProcessor = x => x.Opacity(0.33f)
+                                        .Crop(image.Width, (int)(image.Height * 0.333));
+            }
+
+            var banner = image.Clone(bannerProcessor);
+
+            image.Mutate(x => x.Resize(banner.Height, banner.Height));
+            banner.Mutate(x => x.DrawImage(image, 1f));
 
             var fontCollection = new FontCollection();
             if (!fontCollection.TryFind("Tahoma", out FontFamily? fontFamily))
@@ -57,11 +92,10 @@ namespace DisbotNext.Helpers
                 }
             };
 
-            var position = new PointF((int)((banner.Width + avatar.Width - measure.Width) / 2), (int)(banner.Height * 0.2));
-            var descPosition = new PointF((int)((banner.Width + avatar.Width - descMeasure.Width) / 2), (int)(banner.Height * 0.6));
+            var position = new PointF((int)((banner.Width + image.Width - measure.Width) / 2), (int)(banner.Height * 0.2));
+            var descPosition = new PointF((int)((banner.Width + image.Width - descMeasure.Width) / 2), (int)(banner.Height * 0.6));
             banner.Mutate(x => x.DrawText(headline, font, Color.White, position).DrawText(description, descFont, Color.White, descPosition));
-            banner.Save(tempFile);
-            return tempFile;
+            return banner;
         }
 
         private static string GetLevelDesc(int level)
