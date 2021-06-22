@@ -24,21 +24,10 @@ namespace DisbotNext.Helpers
             var bytes = webClient.DownloadData(url);
             using var avatar = Image.Load(bytes);
 
-            if (avatar.Frames.Count == 1) //jpeg, png
-            {
-                var tempFile = Path.Combine(tempDir, Guid.NewGuid() + ".png");
-                using var banner = ProcessImage(avatar, level);
-                banner.Save(tempFile);
-                return tempFile;
-            }
-            else //gif
-            {
-                var tempFile = Path.Combine(tempDir, Guid.NewGuid() + ".gif");
-                using var banner = ProcessImage(avatar, level);
-                banner.SaveAsGif(tempFile);
-                return tempFile;
-            }
-
+            var tempFile = Path.Combine(tempDir, Guid.NewGuid() + (avatar.Frames.Count == 1 ? ".png" : ".gif"));
+            using var banner = ProcessImage(avatar, level);
+            banner.SaveAsGif(tempFile);
+            return tempFile;
         }
 
         private static Image ProcessImage(Image image, int level)
@@ -75,8 +64,8 @@ namespace DisbotNext.Helpers
             var headline = $"Level {level}";
             var description = GetLevelDesc(level);
 
-            var font = fontFamily.CreateFont(24);
-            var descFont = fontFamily.CreateFont(20);
+            var font = fontFamily.CreateFont(30);
+            var descFont = fontFamily.CreateFont(25);
             var scalingFactor = Math.Min(banner.Width / banner.Width, banner.Height / banner.Height);
 
             var scaledFont = new Font(font, scalingFactor * font.Size);
@@ -92,9 +81,13 @@ namespace DisbotNext.Helpers
                 }
             };
 
+            var fontBrush = Brushes.Solid(Color.White);
+            var fontBorder = Pens.Solid(Color.Black, 0.5f);
+
             var position = new PointF((int)((banner.Width + image.Width - measure.Width) / 2), (int)(banner.Height * 0.2));
             var descPosition = new PointF((int)((banner.Width + image.Width - descMeasure.Width) / 2), (int)(banner.Height * 0.6));
-            banner.Mutate(x => x.DrawText(headline, font, Color.White, position).DrawText(description, descFont, Color.White, descPosition));
+            banner.Mutate(x => x.DrawText(headline, font, fontBrush, fontBorder, position)
+                                .DrawText(description, descFont, fontBrush, fontBorder, descPosition));
             return banner;
         }
 
