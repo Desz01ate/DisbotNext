@@ -32,13 +32,26 @@ namespace DisbotNext.DiscordClient
             {
                 foreach (var channelGroup in this._unitOfWork.TempChannelRepository.GroupBy(x => x.GroupId))
                 {
-                    var parent = channelGroup.Single(x => x.ChannelType == Infrastructures.Common.Enum.ChannelType.Parent);
+                    var parent = channelGroup.SingleOrDefault(x => x.ChannelType == Infrastructures.Common.Enum.ChannelType.Parent);
+
+                    if (parent == null)
+                    {
+                        continue;
+                    }
+
                     if (parent.ExpiredAt <= DateTime.Now)
                     {
                         try
                         {
-                            var text = channelGroup.Single(x => x.ChannelType == Infrastructures.Common.Enum.ChannelType.Text);
-                            var voice = channelGroup.Single(x => x.ChannelType == Infrastructures.Common.Enum.ChannelType.Voice);
+                            var text = channelGroup.SingleOrDefault(x => x.ChannelType == Infrastructures.Common.Enum.ChannelType.Text);
+                            var voice = channelGroup.SingleOrDefault(x => x.ChannelType == Infrastructures.Common.Enum.ChannelType.Voice);
+
+                            // invalid data state, requires removal immediately.
+                            if (text == null || voice == null)
+                            {
+                                await this._unitOfWork.TempChannelRepository.DeleteAsync(parent);
+                                continue;
+                            }
 
                             var parentChannel = await this.Client.GetChannelAsync(parent.Id);
                             var textChannel = await this.Client.GetChannelAsync(text.Id);
