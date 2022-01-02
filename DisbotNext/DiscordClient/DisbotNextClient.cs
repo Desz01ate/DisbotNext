@@ -38,6 +38,7 @@ namespace DisbotNext.DiscordClient
             this._logger = logger;
             this._covidMessageMediator = covidMessageMediator ?? throw new ArgumentNullException(nameof(covidMessageMediator));
             this._unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+            
             this.Client.MessageCreated += Client_MessageCreated;
             this.Client.MessageReactionAdded += Client_MessageReactionAdded;
             this.Client.MessageReactionRemoved += Client_MessageReactionRemoved;
@@ -46,6 +47,7 @@ namespace DisbotNext.DiscordClient
             this.Client.GuildDownloadCompleted += Client_GuildDownloadCompleted;
             this.Client.Heartbeated += Client_Heartbeated;
             this.Client.ChannelDeleted += Client_ChannelDeleted;
+            
             var commands = this.Client.UseCommandsNext(new CommandsNextConfiguration
             {
                 StringPrefixes = new[] { configuration.CommandPrefix },
@@ -53,6 +55,7 @@ namespace DisbotNext.DiscordClient
                 EnableMentionPrefix = true,
                 Services = service,
             });
+
             commands.RegisterCommands<CommandsHandler>();
             commands.CommandErrored += Commands_CommandErrored;
 

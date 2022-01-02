@@ -33,6 +33,7 @@ namespace DisbotNext.Common
             _channels = new List<DiscordChannel>();
             _guilds = new List<DiscordGuild>();
             _members = new List<DiscordMember>();
+            
             Client = new DiscordClient(new DiscordConfiguration()
             {
                 Token = configuration.DiscordBotToken,
@@ -40,6 +41,7 @@ namespace DisbotNext.Common
                 AutoReconnect = true,
                 Intents = DiscordIntents.All
             });
+
             Client.GuildDownloadCompleted += DiscordClient_GuildsDownloadCompleted;
             Client.GuildCreated += DiscordClient_GuildCreatedCompleted;
             Client.GuildDeleted += DiscordClient_GuildDeletedCompleted;

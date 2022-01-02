@@ -25,6 +25,7 @@ namespace DisbotNext.DiscordClient.Commands
         private readonly IMessageMediator<ICovidTracker> _covidTracker;
         private readonly IMessageMediator<IOilPriceChecker> _oilPriceChecker;
         private readonly IMessageMediator<IStockPriceChecker> _stockPriceChecker;
+
         public CommandsHandler(UnitOfWork unitOfWork,
                                DiscordConfigurations configurations,
                                IMessageMediator<ICovidTracker> covidTracker,
@@ -74,6 +75,7 @@ namespace DisbotNext.DiscordClient.Commands
         public async Task SetAutoMoveAsync(CommandContext ctx, string onOff)
         {
             var member = await this._unitOfWork.MemberRepository.FindOrCreateAsync(ctx.Member.Id);
+
             switch (onOff.ToLowerInvariant())
             {
                 case "on":
@@ -86,6 +88,7 @@ namespace DisbotNext.DiscordClient.Commands
                     await ctx.RespondAsync($"ออพชัน {onOff} ไม่รองรับในตอนนี้ (คีย์เวิร์ดที่รองรับ on,off)");
                     return;
             }
+
             await this._unitOfWork.SaveChangesAsync();
             await ctx.Channel.SendDisposableMessageAsync($"สถานะเคลื่อนย้ายอัตโนมัติของ {ctx.Member.Mention} ได้ถูกเปลี่ยนเป็น {(member.AutoMoveToChannel ? "เปิดใช้งาน" : "ปิดใช้งาน")} แล้ว");
         }
@@ -105,22 +108,35 @@ namespace DisbotNext.DiscordClient.Commands
                 var dm = await ctx.Member.CreateDmChannelAsync();
                 await dm.SendFileAsync("Copy_of_Local.db");
             }
+
             File.Delete("Copy_of_Local.db");
         }
 
         [RequirePermissions(DSharpPlus.Permissions.Administrator)]
         [Command("clean")]
-        public async Task CleanMessagesAsync(CommandContext ctx, ulong textChannelId, string type = "bot")
+        public async Task CleanMessagesAsync(CommandContext ctx, ulong? textChannelId = null, string type = "bot")
         {
             try
             {
-                var channel = await ctx.Client.GetChannelAsync(textChannelId);
+                DiscordChannel channel;
+
+                if (!textChannelId.HasValue)
+                {
+                    channel = ctx.Channel;
+                }
+                else
+                {
+                    channel = await ctx.Client.GetChannelAsync(textChannelId.Value);
+                }
+
                 if (channel.Type != DSharpPlus.ChannelType.Text)
                 {
                     await ctx.RespondAsync($"Channel {textChannelId} is not text channel, thus it contains no message.");
                     return;
                 }
+
                 var messages = await channel.GetMessagesAsync(10000);
+
                 foreach (var message in messages)
                 {
                     if ((type == "bot" && message.Author.IsBot) || type == "all" || message.Content.StartsWith(this.configurations.CommandPrefix))
