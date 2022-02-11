@@ -3,6 +3,7 @@ using DSharpPlus.Entities;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -49,22 +50,62 @@ namespace DisbotNext.Common.Extensions
 
         public static async Task SendFileAsync(this DiscordChannel channel, string filePath, bool deleteFile = false, CancellationToken cancellationToken = default)
         {
-            using var fileStream = new FileStream(filePath, FileMode.Open);
-            var messageBuilder = new DiscordMessageBuilder();
-            messageBuilder.WithFile(Path.GetFileName(filePath), fileStream, true);
-            var sentMessage = await channel.SendMessageAsync(messageBuilder);
-            if (deleteFile)
-                File.Delete(filePath);
+            var zipPath = CreateZip(filePath);
+
+            try
+            {
+                using var fileStream = new FileStream(filePath, FileMode.Open);
+
+                var messageBuilder = new DiscordMessageBuilder();
+                messageBuilder.WithFile(Path.GetFileName(filePath), fileStream, true);
+
+                await channel.SendMessageAsync(messageBuilder);
+            }
+            finally
+            {
+
+                if (deleteFile)
+                {
+                    File.Delete(filePath);
+                }
+
+                File.Delete(zipPath);
+            }
         }
 
         public static async Task SendFileAsync(this CommandContext context, string filePath, bool deleteFile = false, CancellationToken cancellationToken = default)
         {
-            using var fileStream = new FileStream(filePath, FileMode.Open);
-            var messageBuilder = new DiscordMessageBuilder();
-            messageBuilder.WithFile(Path.GetFileName(filePath), fileStream, true);
-            var sentMessage = await context.RespondAsync(messageBuilder);
-            if (deleteFile)
-                File.Delete(filePath);
+            var zipPath = CreateZip(filePath);
+
+            try
+            {
+                using var fileStream = new FileStream(filePath, FileMode.Open);
+
+                var messageBuilder = new DiscordMessageBuilder();
+                messageBuilder.WithFile(Path.GetFileName(filePath), fileStream, true);
+
+                await context.RespondAsync(messageBuilder);
+            }
+            finally
+            {
+                if (deleteFile)
+                {
+                    File.Delete(filePath);
+                }
+
+                File.Delete(zipPath);
+            }
+        }
+
+        private static string CreateZip(string filePath)
+        {
+            var zipFileName = Path.ChangeExtension(filePath, ".zip");
+
+            using var zipArchive = ZipFile.Open(zipFileName, ZipArchiveMode.Create);
+
+            zipArchive.CreateEntryFromFile(filePath, Path.GetFileName(filePath));
+
+            return zipFileName;
         }
     }
 }
