@@ -14,7 +14,6 @@ using Hangfire;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Immutable;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,11 +33,12 @@ namespace DisbotNext.DiscordClient
                                 UnitOfWork unitOfWork,
                                 DiscordConfigurations configuration) : base(configuration)
         {
+            var c = System.IO.Directory.GetCurrentDirectory();
             this.semaphore = new SemaphoreSlim(1, 1);
             this._logger = logger;
             this._covidMessageMediator = covidMessageMediator ?? throw new ArgumentNullException(nameof(covidMessageMediator));
             this._unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
-            
+
             this.Client.MessageCreated += Client_MessageCreated;
             this.Client.MessageReactionAdded += Client_MessageReactionAdded;
             this.Client.MessageReactionRemoved += Client_MessageReactionRemoved;
@@ -47,7 +47,7 @@ namespace DisbotNext.DiscordClient
             this.Client.GuildDownloadCompleted += Client_GuildDownloadCompleted;
             this.Client.Heartbeated += Client_Heartbeated;
             this.Client.ChannelDeleted += Client_ChannelDeleted;
-            
+
             var commands = this.Client.UseCommandsNext(new CommandsNextConfiguration
             {
                 StringPrefixes = new[] { configuration.CommandPrefix },
