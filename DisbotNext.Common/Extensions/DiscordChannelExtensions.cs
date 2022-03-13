@@ -54,10 +54,10 @@ namespace DisbotNext.Common.Extensions
 
             try
             {
-                using var fileStream = new FileStream(filePath, FileMode.Open);
+                using var fileStream = new FileStream(zipPath, FileMode.Open);
 
                 var messageBuilder = new DiscordMessageBuilder();
-                messageBuilder.WithFile(Path.GetFileName(filePath), fileStream, true);
+                messageBuilder.WithFile(Path.GetFileName(zipPath), fileStream, true);
 
                 await channel.SendMessageAsync(messageBuilder);
             }
@@ -79,10 +79,10 @@ namespace DisbotNext.Common.Extensions
 
             try
             {
-                using var fileStream = new FileStream(filePath, FileMode.Open);
+                using var fileStream = new FileStream(zipPath, FileMode.Open);
 
                 var messageBuilder = new DiscordMessageBuilder();
-                messageBuilder.WithFile(Path.GetFileName(filePath), fileStream, true);
+                messageBuilder.WithFile(Path.GetFileName(zipPath), fileStream, true);
 
                 await context.RespondAsync(messageBuilder);
             }
@@ -100,6 +100,11 @@ namespace DisbotNext.Common.Extensions
         private static string CreateZip(string filePath)
         {
             var zipFileName = Path.ChangeExtension(filePath, ".zip");
+
+            if (File.Exists(zipFileName))
+            {
+                File.Delete(zipFileName);
+            }
 
             using var zipArchive = ZipFile.Open(zipFileName, ZipArchiveMode.Create);
 
