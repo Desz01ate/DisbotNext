@@ -7,12 +7,9 @@ using System;
 using System.Threading.Tasks;
 using System.IO;
 using DisbotNext.ExternalServices.OilPriceChecker;
-using System.Linq;
-using System.Collections.Generic;
 using DisbotNext.Common.Configurations;
 using DisbotNext.ExternalServices.Financial.Stock;
 using DisbotNext.Infrastructures.Common;
-using DisbotNext.Infrastructures.Common.Models;
 using DisbotNext.Interfaces;
 using DisbotNext.Helpers;
 
@@ -20,11 +17,11 @@ namespace DisbotNext.DiscordClient.Commands
 {
     public class CommandsHandler : BaseCommandModule
     {
-        private readonly UnitOfWork _unitOfWork;
+        private readonly UnitOfWork unitOfWork;
         private readonly DiscordConfigurations configurations;
-        private readonly IMessageMediator<ICovidTracker> _covidTracker;
-        private readonly IMessageMediator<IOilPriceChecker> _oilPriceChecker;
-        private readonly IMessageMediator<IStockPriceChecker> _stockPriceChecker;
+        private readonly IMessageMediator<ICovidTracker> covidTracker;
+        private readonly IMessageMediator<IOilPriceChecker> oilPriceChecker;
+        private readonly IMessageMediator<IStockPriceChecker> stockPriceChecker;
 
         public CommandsHandler(UnitOfWork unitOfWork,
                                DiscordConfigurations configurations,
@@ -32,17 +29,17 @@ namespace DisbotNext.DiscordClient.Commands
                                IMessageMediator<IOilPriceChecker> oilPriceChecker,
                                IMessageMediator<IStockPriceChecker> stockPriceChecker)
         {
-            this._unitOfWork = unitOfWork;
+            this.unitOfWork = unitOfWork;
             this.configurations = configurations;
-            this._covidTracker = covidTracker;
-            this._oilPriceChecker = oilPriceChecker;
-            this._stockPriceChecker = stockPriceChecker;
+            this.covidTracker = covidTracker;
+            this.oilPriceChecker = oilPriceChecker;
+            this.stockPriceChecker = stockPriceChecker;
         }
 
         [Command("level")]
         public async Task GetLevelAvatar(CommandContext ctx)
         {
-            var member = await this._unitOfWork.MemberRepository.FindOrCreateAsync(ctx.Member.Id);
+            var member = await this.unitOfWork.MemberRepository.FindOrCreateAsync(ctx.Member.Id);
             var avatar = AvatarHelpers.GetLevelUpAvatarPath(ctx.Member.AvatarUrl, member.Level);
             await ctx.SendFileAsync(avatar, true);
         }
@@ -56,25 +53,25 @@ namespace DisbotNext.DiscordClient.Commands
         [Command("covid")]
         public async Task GetCovidDetail(CommandContext ctx, [RemainingText] string country = "thailand")
         {
-            await this._covidTracker.SendAsync(country, ctx.RespondAsync);
+            await this.covidTracker.SendAsync(country, ctx.RespondAsync);
         }
 
         [Command("oilprice")]
         public async Task GetOilPriceAsync(CommandContext ctx)
         {
-            await this._oilPriceChecker.SendAsync(null, ctx.RespondAsync);
+            await this.oilPriceChecker.SendAsync(null, ctx.RespondAsync);
         }
 
         [Command("stock")]
         public async Task GetStockPriceAsync(CommandContext ctx, string symbol)
         {
-            await this._stockPriceChecker.SendAsync(symbol, ctx.RespondAsync);
+            await this.stockPriceChecker.SendAsync(symbol, ctx.RespondAsync);
         }
 
         [Command("automove")]
         public async Task SetAutoMoveAsync(CommandContext ctx, string onOff)
         {
-            var member = await this._unitOfWork.MemberRepository.FindOrCreateAsync(ctx.Member.Id);
+            var member = await this.unitOfWork.MemberRepository.FindOrCreateAsync(ctx.Member.Id);
 
             switch (onOff.ToLowerInvariant())
             {
@@ -89,7 +86,7 @@ namespace DisbotNext.DiscordClient.Commands
                     return;
             }
 
-            await this._unitOfWork.SaveChangesAsync();
+            await this.unitOfWork.SaveChangesAsync();
             await ctx.Channel.SendDisposableMessageAsync($"สถานะเคลื่อนย้ายอัตโนมัติของ {ctx.Member.Mention} ได้ถูกเปลี่ยนเป็น {(member.AutoMoveToChannel ? "เปิดใช้งาน" : "ปิดใช้งาน")} แล้ว");
         }
 
@@ -148,6 +145,21 @@ namespace DisbotNext.DiscordClient.Commands
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
+            }
+        }
+
+        [RequirePermissions(DSharpPlus.Permissions.Administrator)]
+        [Command("flush-channel")]
+        public async Task FlushChannelAsync(CommandContext ctx, string? groupIdString = default)
+        {
+
+            if (!string.IsNullOrWhiteSpace(groupIdString) && Guid.TryParse(groupIdString, out var groupId))
+            {
+                await CommonTasks.DeleteSpecificGroupAsync(groupId, ctx.Client, unitOfWork);
+            }
+            else
+            {
+                await CommonTasks.DeleteTempChannelsAsync(ctx.Client, unitOfWork, true);
             }
         }
     }
