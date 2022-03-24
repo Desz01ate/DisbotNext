@@ -1,5 +1,6 @@
-﻿using Newtonsoft.Json;
+﻿using System.IO;
 using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -19,8 +20,18 @@ namespace DisbotNext.ExternalServices.CovidTracker
             {
                 var requestCountry = country.ToLowerInvariant() == "all" ? "all" : $"countries/{country}";
                 var url = $"https://coronavirus-19-api.herokuapp.com/{requestCountry}";
-                var response = await this._httpClient.GetAsync(url);
-                var result = JsonConvert.DeserializeObject<CovidTrackerModel>(await response.Content.ReadAsStringAsync());
+
+                using var response = await this._httpClient.GetAsync(url);
+
+                await using var memoryStream = new MemoryStream();
+
+                await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+
+                var result = await JsonSerializer.DeserializeAsync<CovidTrackerModel>(stream, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                }, cancellationToken);
+
                 return result;
             }
             catch
