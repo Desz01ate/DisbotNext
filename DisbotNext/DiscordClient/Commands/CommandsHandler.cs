@@ -98,12 +98,12 @@ namespace DisbotNext.DiscordClient.Commands
 
             if (ctx.Member == null)
             {
-                await ctx.Channel.SendFileAsync("Copy_of_Local.db");
+                await ctx.Channel.SendFileAsZipAsync("Copy_of_Local.db");
             }
             else
             {
                 var dm = await ctx.Member.CreateDmChannelAsync();
-                await dm.SendFileAsync("Copy_of_Local.db");
+                await dm.SendFileAsZipAsync("Copy_of_Local.db");
             }
 
             File.Delete("Copy_of_Local.db");
