@@ -61,7 +61,7 @@ namespace DisbotNext.DiscordClient
 
             RecurringJob.AddOrUpdate(() => DeleteTempChannels(), Cron.Minutely());
             RecurringJob.AddOrUpdate(() => SendDailyReportAsync(), configuration.DailyReportCron);
-            RecurringJob.AddOrUpdate(() => ReconnectAsync(), Cron.Minutely());
+            RecurringJob.AddOrUpdate(() => ReconnectAsync(), Cron.Daily(11));
         }
 
         private async Task Client_ChannelDeleted(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.ChannelDeleteEventArgs e)
