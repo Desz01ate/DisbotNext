@@ -61,6 +61,7 @@ namespace DisbotNext.DiscordClient
 
             RecurringJob.AddOrUpdate(() => DeleteTempChannels(), Cron.Minutely());
             RecurringJob.AddOrUpdate(() => SendDailyReportAsync(), configuration.DailyReportCron);
+            RecurringJob.AddOrUpdate(() => ReconnectAsync(), Cron.Minutely());
         }
 
         private async Task Client_ChannelDeleted(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.ChannelDeleteEventArgs e)
@@ -74,8 +75,11 @@ namespace DisbotNext.DiscordClient
         private async Task Client_Heartbeated(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.HeartbeatEventArgs e)
         {
             this._logger.LogInformation("Heartbeated triggered.");
-            var activeChannels = this._unitOfWork.TempChannelRepository.GroupBy(x => x.GroupId).Count(); //.Count(x => x.ChannelName != "text" && x.ChannelName != "voice");
+
+            var activeChannels = this._unitOfWork.TempChannelRepository.GroupBy(x => x.GroupId).Count();
+
             this._logger.LogTrace($"{activeChannels} channels tracking.");
+
             await sender.UpdateStatusAsync(new DiscordActivity
             {
                 ActivityType = ActivityType.Watching,
@@ -86,6 +90,7 @@ namespace DisbotNext.DiscordClient
         private async Task Client_GuildDownloadCompleted(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.GuildDownloadCompletedEventArgs e)
         {
             this._logger.LogTrace("Guild download completed.");
+
             foreach (var channel in this.Channels.Where(x => x.Name == "bot-status" && x.Type == DSharpPlus.ChannelType.Text))
             {
                 await channel.SendMessageAsync($"[{DateTime.Now}] ขณะนี้บอทพร้อมใช้งานแล้ว");
