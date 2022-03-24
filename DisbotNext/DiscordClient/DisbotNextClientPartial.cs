@@ -12,6 +12,7 @@ namespace DisbotNext.DiscordClient
         public async Task SendDailyReportAsync()
         {
             await this.semaphore.WaitAsync();
+
             try
             {
                 var channels = this.Channels.Where(x => x.Name == "daily-report" && x.Type == DSharpPlus.ChannelType.Text);
@@ -33,6 +34,20 @@ namespace DisbotNext.DiscordClient
             try
             {
                 await CommonTasks.DeleteTempChannelsAsync(this.Client, this._unitOfWork);
+            }
+            finally
+            {
+                this.semaphore.Release();
+            }
+        }
+
+        public async Task ReconnectAsync()
+        {
+            await this.semaphore.WaitAsync();
+
+            try
+            {
+                await this.Client.ReconnectAsync(true);
             }
             finally
             {
