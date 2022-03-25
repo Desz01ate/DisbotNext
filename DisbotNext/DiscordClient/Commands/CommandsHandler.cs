@@ -162,5 +162,14 @@ namespace DisbotNext.DiscordClient.Commands
                 await CommonTasks.DeleteTempChannelsAsync(ctx.Client, unitOfWork, true);
             }
         }
+
+        [RequireOwner]
+        [Command("reconnect")]
+        public async Task ReconnectAsync(CommandContext ctx)
+        {
+            var client = ctx.Client;
+
+            await client.ReconnectAsync(true);
+        }
     }
 }
