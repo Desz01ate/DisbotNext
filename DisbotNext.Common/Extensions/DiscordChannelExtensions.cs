@@ -48,41 +48,52 @@ namespace DisbotNext.Common.Extensions
             });
         }
 
-        public static async Task SendFileAsync(this DiscordChannel channel, string filePath, bool deleteFile = false, CancellationToken cancellationToken = default)
+        public static async Task SendFileAsZipAsync(this DiscordChannel channel, string filePath, bool deleteFile = false, CancellationToken cancellationToken = default)
         {
             var zipPath = CreateZip(filePath);
 
+            await SendFileAsync(channel, zipPath, deleteFile, cancellationToken);
+
+            File.Delete(zipPath);
+        }
+
+        public static async Task SendFileAsZipAsync(this CommandContext context, string filePath, bool deleteFile = false, CancellationToken cancellationToken = default)
+        {
+            var zipPath = CreateZip(filePath);
+
+            await SendFileAsync(context, zipPath, deleteFile, cancellationToken);
+
+            File.Delete(zipPath);
+        }
+
+        public static async Task SendFileAsync(this DiscordChannel channel, string filePath, bool deleteFile = false, CancellationToken cancellationToken = default)
+        {
             try
             {
-                using var fileStream = new FileStream(zipPath, FileMode.Open);
+                using var fileStream = new FileStream(filePath, FileMode.Open);
 
                 var messageBuilder = new DiscordMessageBuilder();
-                messageBuilder.WithFile(Path.GetFileName(zipPath), fileStream, true);
+                messageBuilder.WithFile(Path.GetFileName(filePath), fileStream, true);
 
                 await channel.SendMessageAsync(messageBuilder);
             }
             finally
             {
-
                 if (deleteFile)
                 {
                     File.Delete(filePath);
                 }
-
-                File.Delete(zipPath);
             }
         }
 
         public static async Task SendFileAsync(this CommandContext context, string filePath, bool deleteFile = false, CancellationToken cancellationToken = default)
         {
-            var zipPath = CreateZip(filePath);
-
             try
             {
-                using var fileStream = new FileStream(zipPath, FileMode.Open);
+                using var fileStream = new FileStream(filePath, FileMode.Open);
 
                 var messageBuilder = new DiscordMessageBuilder();
-                messageBuilder.WithFile(Path.GetFileName(zipPath), fileStream, true);
+                messageBuilder.WithFile(Path.GetFileName(filePath), fileStream, true);
 
                 await context.RespondAsync(messageBuilder);
             }
@@ -92,8 +103,6 @@ namespace DisbotNext.Common.Extensions
                 {
                     File.Delete(filePath);
                 }
-
-                File.Delete(zipPath);
             }
         }
 
