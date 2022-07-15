@@ -99,17 +99,24 @@ namespace DisbotNext.DiscordClient
         private async Task Client_PresenceUpdated(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.PresenceUpdateEventArgs e)
         {
             var presence = e.PresenceAfter;
-            if (presence.User.IsBot)
-                return;
 
-            this._logger.LogInformation($"{e.User.Username} trigger presence updated.");
+            if (presence.User.IsBot)
+            {
+                return;
+            }
+
+            this._logger.LogInformation($"{presence.User.Username} trigger presence updated.");
+
             var guild = presence.Guild;
             var channels = await guild.GetChannelsAsync();
             DiscordChannel? parentCategoryChannel, textChannel, voiceChannel;
             if (!channels.Any(x => x.Name.ToLowerInvariant() == presence?.Activity?.Name?.ToLowerInvariant()))
             {
-                if (presence.Activity.Name == "Custom Status")
+                if (presence == null || presence.Activity == null || presence.Activity.Name == "Custom Status")
+                {
                     return;
+                }
+
                 parentCategoryChannel = channels.FirstOrDefault(x => x.Name == presence.Activity.Name && x.Type == DSharpPlus.ChannelType.Category)
                                         ?? await guild.CreateChannelAsync(presence.Activity.Name, DSharpPlus.ChannelType.Category);
                 textChannel = await guild.CreateChannelAsync("text", DSharpPlus.ChannelType.Text, parentCategoryChannel);
