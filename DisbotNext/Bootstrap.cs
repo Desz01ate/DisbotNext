@@ -7,7 +7,7 @@ using DisbotNext.Infrastructures.Common;
 using DisbotNext.Interfaces;
 using DisbotNext.Mediators;
 using Hangfire;
-using Hangfire.LiteDB;
+using Hangfire.MemoryStorage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -93,7 +93,7 @@ namespace DisbotNext
                     services.AddHangfire(config =>
                     {
                         config.UseColouredConsoleLogProvider();
-                        config.UseLiteDbStorage();
+                        config.UseMemoryStorage();
                     });
                     services.AddHangfireServer();
                     services.AddSingleton<DisbotNextClient>();
