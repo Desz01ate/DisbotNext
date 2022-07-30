@@ -13,7 +13,7 @@
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="5.0.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="5.0.0" />
     <PackageReference Include="HangFire" Version="1.7.20" />
-    <PackageReference Include="Hangfire.LiteDB" Version="0.4.0" />
+	<PackageReference Include="Hangfire.MemoryStorage" Version="1.7.0" />
     <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-beta11" />
     <PackageReference Include="YahooFinanceApi" Version="2.1.2" />
   </ItemGroup>
