@@ -42,6 +42,7 @@ namespace DisbotNext.DiscordClient.Commands
             var member = await this.unitOfWork.MemberRepository.FindOrCreateAsync(ctx.Member.Id);
             var avatar = await AvatarHelpers.GetLevelUpAvatarPathAsync(ctx.Member.AvatarUrl, member.Level);
             await ctx.SendFileAsync(avatar, true);
+            await ctx.RespondAsync($"Exp {member.Exp}/{member.NextExp}");
         }
 
         [Command("test")]
