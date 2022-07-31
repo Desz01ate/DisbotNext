@@ -1,0 +1,12 @@
+version: '3.4'
+
+services:
+  disbot:
+    image: disbotnext
+    build:
+      context: .
+      dockerfile: DisbotNext/Dockerfile
+    environment:
+      DISBOT_CONNECTION_STRING: "Data Source=Local.db"
+      DISCORD_BOT_TOKEN: ""
+      DAILY_REPORT_CRON: "0 5 * * *"
