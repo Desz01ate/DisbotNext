@@ -4,62 +4,88 @@ using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.Processing;
 using System;
 using System.IO;
-using System.Net;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace DisbotNext.Helpers
 {
     public static class AvatarHelpers
     {
-        public static string GetLevelUpAvatarPath(string url, int level)
+        public static async Task<string> GetLevelUpAvatarPathAsync(string url, int level)
         {
             var tempDir = Path.Combine(Directory.GetCurrentDirectory(), "Temp");
-            Directory.CreateDirectory(tempDir);
-            using var webClient = new WebClient();
-            var bytes = webClient.DownloadData(url);
-            using var avatar = Image.Load(bytes);
 
-            var tempFile = Path.Combine(tempDir, Guid.NewGuid() + (avatar.Frames.Count == 1 ? ".png" : ".gif"));
+            Directory.CreateDirectory(tempDir);
+
+            var extension = GetFileExtensionFromUrl(url);
+
+            var tempFile = Path.Combine(tempDir, Guid.NewGuid().ToString() + extension);
+
+            using var httpClient = new HttpClient();
+
+            using var response = await httpClient.GetAsync(url);
+
+            using var fileArray = await response.Content.ReadAsStreamAsync();
+
+            using var ms = new MemoryStream();
+
+            await fileArray.CopyToAsync(ms);
+
+            var imageArray = ms.ToArray();
+
+            using var avatar = Image.Load(imageArray);
+
             using var banner = ProcessImage(avatar, level);
-            banner.SaveAsGif(tempFile);
+
+            switch (extension)
+            {
+                case ".gif":
+                    await banner.SaveAsGifAsync(tempFile);
+                    break;
+                case ".png":
+                    await banner.SaveAsPngAsync(tempFile);
+                    break;
+                case ".jpg":
+                case ".jpeg":
+                default:
+                    await banner.SaveAsJpegAsync(tempFile);
+                    break;
+            }
+
             return tempFile;
         }
 
         private static Image ProcessImage(Image image, int level)
         {
             if (image == null)
+            {
                 throw new ArgumentNullException(nameof(image));
+            }
 
             image.Mutate(x => x.Resize(512, 512));
 
-            Action<IImageProcessingContext> bannerProcessor;
-            if (image.Frames.Count == 1)
-            {
-                bannerProcessor = x => x.GaussianBlur(5f)
-                                           .Opacity(0.33f)
-                                           .Crop(image.Width, (int)(image.Height * 0.333));
-            }
-            else
-            {
-                bannerProcessor = x => x.Opacity(0.33f)
-                                        .Crop(image.Width, (int)(image.Height * 0.333));
-            }
+            var banner = image.Clone(x => x.Crop(image.Width, (int)(image.Height * 0.333)));
 
-            var banner = image.Clone(bannerProcessor);
-
+            banner.Mutate(x => x.BoxBlur());
+            banner.Mutate(x => x.Fill(new GraphicsOptions
+            {
+                BlendPercentage = 0.5f,
+            }, Color.Black));
             image.Mutate(x => x.Resize(banner.Height, banner.Height));
             banner.Mutate(x => x.DrawImage(image, 1f));
 
             var fontCollection = new FontCollection();
-            if (!fontCollection.TryFind("Tahoma", out FontFamily? fontFamily))
+            if (!fontCollection.TryFind("THSarabunNew", out FontFamily? fontFamily))
             {
-                fontFamily = fontCollection.Install("./Assets/tahoma.ttf");
+                fontFamily = fontCollection.Install("./Assets/THSarabunNew.ttf");
             }
 
             var headline = $"Level {level}";
             var description = GetLevelDesc(level);
 
-            var font = fontFamily.CreateFont(30);
-            var descFont = fontFamily.CreateFont(25);
+            var font = fontFamily.CreateFont(55);
+            var descFont = fontFamily.CreateFont(45);
             var scalingFactor = Math.Min(banner.Width / banner.Width, banner.Height / banner.Height);
 
             var scaledFont = new Font(font, scalingFactor * font.Size);
@@ -76,9 +102,9 @@ namespace DisbotNext.Helpers
             };
 
             var fontBrush = Brushes.Solid(Color.White);
-            var fontBorder = Pens.Solid(Color.Black, 0.5f);
+            var fontBorder = Pens.Solid(Color.White, 0.1f);
 
-            var position = new PointF((int)((banner.Width + image.Width - measure.Width) / 2), (int)(banner.Height * 0.2));
+            var position = new PointF((int)((banner.Width + image.Width - measure.Width) / 2), (int)(banner.Height * 0.1));
             var descPosition = new PointF((int)((banner.Width + image.Width - descMeasure.Width) / 2), (int)(banner.Height * 0.6));
             banner.Mutate(x => x.DrawText(headline, font, fontBrush, fontBorder, position)
                                 .DrawText(description, descFont, fontBrush, fontBorder, descPosition));
@@ -100,6 +126,13 @@ namespace DisbotNext.Helpers
                 var x when x < 40 => "'ผู้อำนวยการ'",
                 _ => "'เจ้าของบริษัท'"
             };
+        }
+
+        public static string GetFileExtensionFromUrl(string url)
+        {
+            url = url.Split('?')[0];
+            url = url.Split('/').Last();
+            return url.Contains('.') ? url.Substring(url.LastIndexOf('.')) : "";
         }
     }
 }

@@ -40,7 +40,7 @@ namespace DisbotNext.DiscordClient.Commands
         public async Task GetLevelAvatar(CommandContext ctx)
         {
             var member = await this.unitOfWork.MemberRepository.FindOrCreateAsync(ctx.Member.Id);
-            var avatar = AvatarHelpers.GetLevelUpAvatarPath(ctx.Member.AvatarUrl, member.Level);
+            var avatar = await AvatarHelpers.GetLevelUpAvatarPathAsync(ctx.Member.AvatarUrl, member.Level);
             await ctx.SendFileAsync(avatar, true);
         }
 
@@ -132,15 +132,20 @@ namespace DisbotNext.DiscordClient.Commands
                     return;
                 }
 
-                var messages = await channel.GetMessagesAsync(10000);
+                var messages = await channel.GetMessagesAsync(100);
 
                 foreach (var message in messages)
                 {
-                    if ((type == "bot" && message.Author.IsBot) || type == "all" || message.Content.StartsWith(this.configurations.CommandPrefix))
+                    if ((type == "bot" && message.Author.IsBot) ||
+                         type == "all" ||
+                         message.Content.StartsWith(this.configurations.CommandPrefix))
                     {
                         await message.DeleteAsync();
+                        await Task.Delay(10);
                     }
                 }
+
+                await ctx.SendDisposableMessageAsync("Messages deleted");
             }
             catch (Exception ex)
             {
