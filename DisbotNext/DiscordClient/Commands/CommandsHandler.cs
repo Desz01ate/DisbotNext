@@ -94,7 +94,7 @@ namespace DisbotNext.DiscordClient.Commands
         [Command("dumpdb")]
         public async Task GetDatabaseDumpFile(CommandContext ctx)
         {
-            File.Copy("Local.db", "Copy_of_Local.db", true);
+            File.Copy("persistent/Local.db", "Copy_of_Local.db", true);
 
             if (ctx.Member == null)
             {

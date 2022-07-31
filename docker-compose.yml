@@ -7,6 +7,10 @@ services:
       context: .
       dockerfile: DisbotNext/Dockerfile
     environment:
-      DISBOT_CONNECTION_STRING: "Data Source=Local.db"
+      DISBOT_CONNECTION_STRING: "Data Source=persistent/Local.db"
       DISCORD_BOT_TOKEN: ""
       DAILY_REPORT_CRON: "0 5 * * *"
+    volumes:
+      - type: bind
+        source: ./persistent/Local.db
+        target: /app/persistent/Local.db
