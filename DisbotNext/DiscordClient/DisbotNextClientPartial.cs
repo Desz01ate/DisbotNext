@@ -1,8 +1,4 @@
-﻿using DisbotNext.Infrastructures.Common;
-using DisbotNext.Infrastructures.Common.Models;
-using DSharpPlus.Exceptions;
-using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 
 namespace DisbotNext.DiscordClient
@@ -48,6 +44,30 @@ namespace DisbotNext.DiscordClient
             try
             {
                 await this.Client.ReconnectAsync(true);
+            }
+            finally
+            {
+                this.semaphore.Release();
+            }
+        }
+
+        public async Task CheckOilPricePeriodicallyAsync()
+        {
+            await this.semaphore.WaitAsync();
+
+            try
+            {
+                var isPriceChanging = await this._oilPriceMessageMediator.IsPriceChangingAsync();
+
+                if (isPriceChanging)
+                {
+                    var channels = this.Channels.Where(x => x.Name == "daily-report" && x.Type == DSharpPlus.ChannelType.Text);
+
+                    foreach (var channel in channels)
+                    {
+                        await this._oilPriceMessageMediator.SendAsync(null, channel.SendMessageAsync);
+                    }
+                }
             }
             finally
             {
