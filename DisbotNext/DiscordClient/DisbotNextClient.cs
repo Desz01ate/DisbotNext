@@ -229,7 +229,7 @@ namespace DisbotNext.DiscordClient
             var levelUp = user.ExpGained(1);
             if (levelUp)
             {
-                var avatar = AvatarHelpers.GetLevelUpAvatarPath(e.Author.AvatarUrl, user.Level);
+                var avatar = await AvatarHelpers.GetLevelUpAvatarPathAsync(e.Author.AvatarUrl, user.Level);
                 await channel.SendMessageAsync($"🎉🎉🎉 🥂{e.Author.Mention}🥂 ได้อัพเลเวลเป็น {user.Level}! 🎉🎉🎉 ");
                 await channel.SendFileAsync(avatar, true);
             }
