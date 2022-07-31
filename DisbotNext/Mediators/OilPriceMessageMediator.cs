@@ -1,4 +1,5 @@
 ﻿using DisbotNext.ExternalServices.OilPriceChecker;
+using DisbotNext.Interfaces;
 using DSharpPlus.Entities;
 using System;
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace DisbotNext.Mediators
 {
-    public class OilPriceMessageMediator : MessageMediatorBase<IOilPriceChecker>
+    public class OilPriceMessageMediator : MessageMediatorBase<IOilPriceChecker>, IOilPriceMessageMediator
     {
         public OilPriceMessageMediator(IOilPriceChecker service) : base(service)
         {

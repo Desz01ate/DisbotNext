@@ -103,7 +103,7 @@ namespace DisbotNext
                     services.AddTransient<IOilPriceChecker, OilPriceWebScraping>();
                     services.AddTransient<IStockPriceChecker, StockPriceChecker>();
                     services.AddTransient<IMessageMediator<ICovidTracker>, CovidReportMessageMediator>();
-                    services.AddTransient<IMessageMediator<IOilPriceChecker>, OilPriceMessageMediator>();
+                    services.AddTransient<IOilPriceMessageMediator, OilPriceMessageMediator>();
                     services.AddTransient<IMessageMediator<IStockPriceChecker>, StockReportMessageMediator>();
                     services.AddHostedService<Application>();
                 })

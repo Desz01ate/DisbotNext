@@ -20,13 +20,13 @@ namespace DisbotNext.DiscordClient.Commands
         private readonly UnitOfWork unitOfWork;
         private readonly DiscordConfigurations configurations;
         private readonly IMessageMediator<ICovidTracker> covidTracker;
-        private readonly IMessageMediator<IOilPriceChecker> oilPriceChecker;
+        private readonly IOilPriceMessageMediator oilPriceChecker;
         private readonly IMessageMediator<IStockPriceChecker> stockPriceChecker;
 
         public CommandsHandler(UnitOfWork unitOfWork,
                                DiscordConfigurations configurations,
                                IMessageMediator<ICovidTracker> covidTracker,
-                               IMessageMediator<IOilPriceChecker> oilPriceChecker,
+                               IOilPriceMessageMediator oilPriceChecker,
                                IMessageMediator<IStockPriceChecker> stockPriceChecker)
         {
             this.unitOfWork = unitOfWork;

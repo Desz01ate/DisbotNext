@@ -28,12 +28,12 @@ namespace DisbotNext.DiscordClient
         private readonly UnitOfWork _unitOfWork;
         private readonly ILogger _logger;
         private readonly IMessageMediator<ICovidTracker> _covidMessageMediator;
-        private readonly OilPriceMessageMediator _oilPriceMessageMediator;
+        private readonly IOilPriceMessageMediator _oilPriceMessageMediator;
 
         public DisbotNextClient(ILogger<DisbotNextClient> logger,
                                 IServiceProvider service,
                                 IMessageMediator<ICovidTracker> covidMessageMediator,
-                                OilPriceMessageMediator oilPriceMessageMediator,
+                                IOilPriceMessageMediator oilPriceMessageMediator,
                                 UnitOfWork unitOfWork,
                                 DiscordConfigurations configuration) : base(configuration)
         {
