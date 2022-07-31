@@ -3,6 +3,7 @@ using DSharpPlus.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,16 +16,17 @@ namespace DisbotNext.Mediators
         {
         }
 
-        protected override async IAsyncEnumerable<DiscordEmbed?> EnumerateDiscordEmbedAsync(string? queryString, CancellationToken cancellationToken = default)
+        public async Task<bool> IsPriceChangingAsync(CancellationToken cancellationToken = default)
         {
             var prices = await this.Service.GetOilPriceAsync(cancellationToken);
+
             var today = prices.SelectMany(x => x.Types)
                                .Where(x => x.PricePerLitre != null && x.RetailName != "พรุ่งนี้")
                                .GroupBy(x => x.Type)
                                .Select(x => new
                                {
                                    Type = x.Key,
-                                   Info = x.OrderBy(y => y.PricePerLitre.Value).First()
+                                   Info = x.OrderBy(y => y.PricePerLitre!.Value).First()
                                }).ToArray();
 
             var tomorrow = prices.SelectMany(x => x.Types)
@@ -33,7 +35,35 @@ namespace DisbotNext.Mediators
                                .Select(x => new
                                {
                                    Type = x.Key,
-                                   Info = x.OrderBy(y => y.PricePerLitre.Value).First()
+                                   Info = x.OrderBy(y => y.PricePerLitre!.Value).First()
+                               }).ToArray();
+
+            return today.Any(
+                p => p.Info.PricePerLitre != tomorrow.Single(t => t.Type == p.Type).Info.PricePerLitre);
+        }
+
+        protected override async IAsyncEnumerable<DiscordEmbed?> EnumerateDiscordEmbedAsync(
+            string? queryString,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            var prices = await this.Service.GetOilPriceAsync(cancellationToken);
+
+            var today = prices.SelectMany(x => x.Types)
+                               .Where(x => x.PricePerLitre != null && x.RetailName != "พรุ่งนี้")
+                               .GroupBy(x => x.Type)
+                               .Select(x => new
+                               {
+                                   Type = x.Key,
+                                   Info = x.OrderBy(y => y.PricePerLitre!.Value).First()
+                               }).ToArray();
+
+            var tomorrow = prices.SelectMany(x => x.Types)
+                               .Where(x => x.PricePerLitre != null && x.RetailName == "พรุ่งนี้")
+                               .GroupBy(x => x.Type)
+                               .Select(x => new
+                               {
+                                   Type = x.Key,
+                                   Info = x.OrderBy(y => y.PricePerLitre!.Value).First()
                                }).ToArray();
 
             var embed = new DiscordEmbedBuilder()

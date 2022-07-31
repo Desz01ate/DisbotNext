@@ -3,11 +3,13 @@ using DisbotNext.Common.Configurations;
 using DisbotNext.Common.Extensions;
 using DisbotNext.DiscordClient.Commands;
 using DisbotNext.ExternalServices.CovidTracker;
+using DisbotNext.ExternalServices.OilPriceChecker;
 using DisbotNext.Helpers;
 using DisbotNext.Infrastructures.Common;
 using DisbotNext.Infrastructures.Common.Enum;
 using DisbotNext.Infrastructures.Common.Models;
 using DisbotNext.Interfaces;
+using DisbotNext.Mediators;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using Hangfire;
@@ -26,10 +28,12 @@ namespace DisbotNext.DiscordClient
         private readonly UnitOfWork _unitOfWork;
         private readonly ILogger _logger;
         private readonly IMessageMediator<ICovidTracker> _covidMessageMediator;
+        private readonly OilPriceMessageMediator _oilPriceMessageMediator;
 
         public DisbotNextClient(ILogger<DisbotNextClient> logger,
                                 IServiceProvider service,
                                 IMessageMediator<ICovidTracker> covidMessageMediator,
+                                OilPriceMessageMediator oilPriceMessageMediator,
                                 UnitOfWork unitOfWork,
                                 DiscordConfigurations configuration) : base(configuration)
         {
@@ -37,6 +41,7 @@ namespace DisbotNext.DiscordClient
             this.semaphore = new SemaphoreSlim(1, 1);
             this._logger = logger;
             this._covidMessageMediator = covidMessageMediator ?? throw new ArgumentNullException(nameof(covidMessageMediator));
+            this._oilPriceMessageMediator = oilPriceMessageMediator;
             this._unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
 
             this.Client.MessageCreated += Client_MessageCreated;
@@ -61,6 +66,7 @@ namespace DisbotNext.DiscordClient
 
             RecurringJob.AddOrUpdate(() => DeleteTempChannels(), Cron.Minutely());
             RecurringJob.AddOrUpdate(() => SendDailyReportAsync(), configuration.DailyReportCron);
+            RecurringJob.AddOrUpdate(() => CheckOilPricePeriodicallyAsync(), Cron.Hourly());
         }
 
         private async Task Client_ChannelDeleted(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.ChannelDeleteEventArgs e)

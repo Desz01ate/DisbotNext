@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31025.218
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32616.157
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DisbotNext", "DisbotNext\DisbotNext.csproj", "{C7D31F58-A15C-422E-93DD-A3597C957D15}"
 EndProject
@@ -11,7 +11,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DisbotNext.Infrastructures.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DisbotNext.Infrastructures.Common", "DisbotNext.Infrastructure.Common\DisbotNext.Infrastructures.Common.csproj", "{E71879CD-A1B1-4297-9BD4-1E54C52FCDD9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DisbotNext.Api", "DisbotNext.Api\DisbotNext.Api.csproj", "{2AE0651E-C28E-41E5-B189-6CF8FFB7D085}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DisbotNext.Api", "DisbotNext.Api\DisbotNext.Api.csproj", "{2AE0651E-C28E-41E5-B189-6CF8FFB7D085}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
