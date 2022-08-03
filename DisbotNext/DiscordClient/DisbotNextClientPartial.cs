@@ -59,7 +59,7 @@ namespace DisbotNext.DiscordClient
         {
             await this.semaphore.WaitAsync();
 
-            if (lastOilPriceUpdate?.Date == DateTimeOffset.UtcNow)
+            if (lastOilPriceUpdate?.Date == DateTimeOffset.UtcNow.Date)
             {
                 this.semaphore.Release();
 
