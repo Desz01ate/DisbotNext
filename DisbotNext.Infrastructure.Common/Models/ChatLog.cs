@@ -1,33 +1,29 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DisbotNext.Infrastructures.Common.Models
 {
     public class ChatLog
     {
-        public ulong Id { get; set; }
-
-        public virtual Member Author { get; set; }
-
-        public string Content { get; set; }
-
-        public DateTime CreateAt { get; set; }
-
         public ChatLog()
         {
-
         }
 
-        public ChatLog(ulong id,
-                       string content,
-                       DateTime createAt)
+        public ChatLog(ulong id, ulong memberId, string content, DateTime createAt)
         {
             Id = id;
+            MemberId = memberId;
             Content = content;
             CreateAt = createAt;
         }
+
+        public ulong Id { get; }
+
+        public ulong MemberId { get; }
+
+        public string Content { get; }
+
+        public DateTime CreateAt { get; }
+
+        public virtual Member Member { get; protected set; }
     }
 }

@@ -249,12 +249,7 @@ namespace DisbotNext.DiscordClient
                 content = string.Join(',', e.Message.Attachments.Select(x => x.Url));
             }
 
-            await this._unitOfWork.ChatLogRepository.InsertAsync(new ChatLog
-            {
-                Author = user,
-                Content = content,
-                CreateAt = DateTime.Now
-            });
+            await this._unitOfWork.ChatLogRepository.InsertAsync(new ChatLog(e.Message.Id, e.Author.Id, content, DateTime.Now));
             await this._unitOfWork.SaveChangesAsync();
         }
     }
