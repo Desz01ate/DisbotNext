@@ -67,19 +67,20 @@ namespace DisbotNext
         public static IHostBuilder CreateHostBuilder(string[] args)
         {
             string connectionString, botToken, cron;
-            if (args.Any())
-            {
-                connectionString = args[0];
-                botToken = args[1];
-                cron = args[2];
-            }
-            else
-            {
-                connectionString = Environment.GetEnvironmentVariable("DISBOT_CONNECTION_STRING") ?? $@"Data Source={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Local.db")}";
-                //var commandPrefix = Environment.GetEnvironmentVariable("COMMAND_PREFIX") ?? "!";
-                botToken = Environment.GetEnvironmentVariable("DISCORD_BOT_TOKEN") ?? throw new KeyNotFoundException("No environment variable 'DISCORD_BOT_TOKEN' found.");
-                cron = Environment.GetEnvironmentVariable("DAILY_REPORT_CRON") ?? "0 0 * * *";
-            }
+
+            //if (args.Any())
+            //{
+            //    connectionString = args[0];
+            //    botToken = args[1];
+            //    cron = args[2];
+            //}
+            //else
+            //{
+            connectionString = Environment.GetEnvironmentVariable("DISBOT_CONNECTION_STRING") ?? throw new InvalidOperationException("Unable to read DISBOT_CONNECTION_STRING");
+            //var commandPrefix = Environment.GetEnvironmentVariable("COMMAND_PREFIX") ?? "!";
+            botToken = Environment.GetEnvironmentVariable("DISCORD_BOT_TOKEN") ?? throw new KeyNotFoundException("No environment variable 'DISCORD_BOT_TOKEN' found.");
+            cron = Environment.GetEnvironmentVariable("DAILY_REPORT_CRON") ?? "0 0 * * *";
+            //}
 
             var host = new HostBuilder()
                 .ConfigureServices(services =>
@@ -88,7 +89,7 @@ namespace DisbotNext
 
                     services.AddHttpClient();
 
-                    services.AddSqliteDbContext(connectionString);
+                    services.AddNpgsqlDbContext(connectionString);
 
                     services.AddHangfire(config =>
                     {

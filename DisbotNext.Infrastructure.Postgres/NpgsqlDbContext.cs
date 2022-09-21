@@ -1,11 +1,15 @@
-﻿using DisbotNext.Infrastructures.Common.Models;
+﻿using DisbotNext.Infrastructures.Common;
+using DisbotNext.Infrastructures.Common.Models;
 using Microsoft.EntityFrameworkCore;
-using DisbotNext.Infrastructures.Common;
 
-namespace DisbotNext.Infrastructures.Sqlite
+namespace DisbotNext.Infrastructure.Postgres
 {
-    public class SqliteDbContext : DisbotDbContext
+    public class NpgsqlDbContext : DisbotDbContext
     {
+        public NpgsqlDbContext(DbContextOptions<NpgsqlDbContext> options) : base(options)
+        {
+        }
+
         public override DbSet<Member> Members { get; set; }
 
         public override DbSet<ChatLog> ChatLogs { get; set; }
@@ -16,16 +20,11 @@ namespace DisbotNext.Infrastructures.Sqlite
 
         public override DbSet<StockSubscription> StockSubscriptions { get; set; }
 
-        public SqliteDbContext(DbContextOptions<SqliteDbContext> options) : base(options)
-        {
-        }
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Member>(builder =>
             {
                 builder.HasKey(x => x.Id);
-                builder.Property(x => x.Id);
                 builder.HasMany(x => x.ChatLogs).WithOne();
             });
 
@@ -40,8 +39,9 @@ namespace DisbotNext.Infrastructures.Sqlite
                        .IsRequired();
 
                 builder.HasOne(x => x.Member)
-                       .WithMany(x => x.ChatLogs)
-                       .OnDelete(DeleteBehavior.Cascade);
+                        .WithMany(x => x.ChatLogs)
+                        .HasForeignKey(x => x.MemberId)
+                        .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<TempChannel>(builder =>
@@ -64,9 +64,10 @@ namespace DisbotNext.Infrastructures.Sqlite
             modelBuilder.Entity<StockSubscription>(builder =>
             {
                 builder.HasKey(x => x.Id);
-                builder.Property(x => x.Id).ValueGeneratedOnAdd();
                 builder.Property(x => x.Symbol).IsRequired();
             });
+
+            base.OnModelCreating(modelBuilder);
         }
     }
 }

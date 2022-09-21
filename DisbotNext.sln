@@ -13,6 +13,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DisbotNext.Infrastructures.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DisbotNext.Api", "DisbotNext.Api\DisbotNext.Api.csproj", "{2AE0651E-C28E-41E5-B189-6CF8FFB7D085}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DisbotNext.Infrastructure.Postgres", "DisbotNext.Infrastructure.Postgres\DisbotNext.Infrastructure.Postgres.csproj", "{C0949A5F-B21E-4EC9-8E47-38782D850CB5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{2AE0651E-C28E-41E5-B189-6CF8FFB7D085}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2AE0651E-C28E-41E5-B189-6CF8FFB7D085}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2AE0651E-C28E-41E5-B189-6CF8FFB7D085}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C0949A5F-B21E-4EC9-8E47-38782D850CB5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C0949A5F-B21E-4EC9-8E47-38782D850CB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C0949A5F-B21E-4EC9-8E47-38782D850CB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C0949A5F-B21E-4EC9-8E47-38782D850CB5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
